@@ -1,38 +1,76 @@
 <?php
-/**
- * Plugin Name:       Open Events
- * Plugin URI:         https://example.com/open-events
- * Description:        Plugin di esempio che stampa "Plugin Attivo" nei log e tramite shortcode.
- * Version:            1.0.0
- * Requires at least:  5.8
- * Requires PHP:       7.4
- * Author:             Michel
- * Author URI:         https://example.com
- * License:             GPL v2 or later
- * License URI:        https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:         open-events
- */
+/*
+Plugin Name: Open Events
+Plugin URI: https://github.com/BullXen/open-events
+Description: Plugin per la gestione di eventi. Aggiunge a Elementor un widget che permette agli utenti loggati di gestire da front-end eventi, luoghi e organizzatori (The Events Calendar) come un portale.
+Version: 1.0.0
+Author: BullXen
+GitHub Plugin URI: BullXen/open-events
+Primary Branch: main
+Text Domain: open-events
+*/
 
-// Impedisce l'accesso diretto al file.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-/**
- * Scrive "Plugin Attivo" nel log di WordPress (debug.log) se WP_DEBUG_LOG è attivo.
- */
-function open_events_log_attivo() {
-	if ( defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
-		error_log( 'Plugin Attivo' );
-	}
-}
-add_action( 'plugins_loaded', 'open_events_log_attivo' );
+define( 'OPEN_EVENTS_VERSION', '1.0.0' );
+define( 'OPEN_EVENTS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'OPEN_EVENTS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 /**
- * Shortcode [open_events_attivo] che stampa "Plugin Attivo".
- * Uso: [open_events_attivo]
+ * Verifica che Elementor sia attivo prima di caricare il widget.
+ * Senza Elementor la classe Widget_Base non esiste e il sito andrebbe in errore fatale.
  */
-function open_events_shortcode_attivo() {
-	return esc_html__( 'Plugin Attivo', 'open-events' );
+function open_events_is_elementor_active() {
+	return did_action( 'elementor/loaded' );
 }
-add_shortcode( 'open_events_attivo', 'open_events_shortcode_attivo' );
+
+function open_events_admin_notice_missing_elementor() {
+	echo '<div class="notice notice-warning"><p>';
+	esc_html_e( 'Open Events richiede il plugin Elementor attivo per funzionare.', 'open-events' );
+	echo '</p></div>';
+}
+
+function open_events_register_category( $elements_manager ) {
+	$elements_manager->add_category(
+		'open-events',
+		[
+			'title' => esc_html__( 'Open Events', 'open-events' ),
+			'icon'  => 'eicon-calendar',
+		]
+	);
+}
+
+function open_events_register_widgets( $widgets_manager ) {
+	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/class-widget-events-manager.php';
+	$widgets_manager->register( new \OpenEvents\Widget_Events_Manager() );
+}
+
+function open_events_register_assets() {
+	wp_register_style(
+		'open-events-manager-style',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/css/events-manager.css',
+		[],
+		OPEN_EVENTS_VERSION
+	);
+	wp_register_script(
+		'open-events-manager-script',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/js/events-manager.js',
+		[ 'jquery', 'elementor-frontend' ],
+		OPEN_EVENTS_VERSION,
+		true
+	);
+}
+
+function open_events_init() {
+	if ( ! open_events_is_elementor_active() ) {
+		add_action( 'admin_notices', 'open_events_admin_notice_missing_elementor' );
+		return;
+	}
+
+	add_action( 'elementor/elements/categories_registered', 'open_events_register_category' );
+	add_action( 'elementor/widgets/register', 'open_events_register_widgets' );
+	add_action( 'wp_enqueue_scripts', 'open_events_register_assets' );
+}
+add_action( 'plugins_loaded', 'open_events_init' );

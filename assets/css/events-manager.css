@@ -1,0 +1,576 @@
+/* Container, view boundaries and typography reset */
+.em-form-container {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    margin: 30px auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    color: #333333;
+    box-sizing: border-box;
+}
+
+.em-form-container * {
+    box-sizing: border-box;
+}
+
+/* Alerts and Notifications */
+.em-alert {
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.em-alert.success {
+    background-color: #ecfdf5;
+    color: #047857;
+    border-left: 4px solid #10b981;
+}
+.em-alert.error {
+    background-color: #fef2f2;
+    color: #b91c1c;
+    border-left: 4px solid #ef4444;
+}
+.em-alert.warning {
+    background-color: #fffbec;
+    color: #b25e00;
+    border-left: 4px solid #f59e0b;
+}
+
+/* Back Link Navigation */
+.em-back-link {
+    margin-bottom: 25px;
+}
+.em-back-link a {
+    display: inline-flex;
+    align-items: center;
+    color: #64748b;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+.em-back-link a:hover {
+    color: #0284c7;
+}
+
+/* Titles */
+h2.em-section-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 8px 0;
+}
+p.em-section-subtitle {
+    color: #64748b;
+    font-size: 15px;
+    margin: 0 0 30px 0;
+    line-height: 1.6;
+}
+
+/* Portal Hub Styling */
+.em-hub-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 35px;
+}
+.em-hub-user {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.em-hub-user img.avatar {
+    border-radius: 50%;
+    border: 3px solid #f1f5f9;
+}
+.em-hub-user-meta h3 {
+    margin: 0 0 4px 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e293b;
+}
+.em-hub-user-meta p {
+    margin: 0;
+    font-size: 14px;
+    color: #64748b;
+}
+.em-hub-header-actions {
+    display: flex;
+    gap: 12px;
+}
+.em-profile-btn, .em-logout-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+.em-profile-btn {
+    background-color: #f1f5f9;
+    color: #334155;
+}
+.em-profile-btn:hover {
+    background-color: #e2e8f0;
+    color: #0f172a;
+}
+.em-logout-btn {
+    background-color: #fef2f2;
+    color: #991b1b;
+}
+.em-logout-btn:hover {
+    background-color: #fee2e2;
+}
+
+/* Hub Cards Grid */
+.em-hub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 25px;
+}
+
+/* Hub Card — centrato e con icona in evidenza */
+.em-hub-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 32px 24px 28px;
+    text-decoration: none !important;
+    color: #1e293b !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    height: 100%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+.em-hub-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.10);
+    border-color: #0284c7;
+}
+
+/* Icona card */
+.em-hub-card .em-card-icon {
+    font-size: 32px;
+    color: #0284c7;
+    margin-bottom: 18px;
+    background: #f0f9ff;
+    width: 70px;
+    height: 70px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+    flex-shrink: 0;
+}
+.em-hub-card .em-card-icon i,
+.em-hub-card .em-card-icon svg {
+    font-size: 30px;
+    width: 30px;
+    height: 30px;
+    display: block;
+}
+.em-hub-card:hover .em-card-icon {
+    background: #0284c7;
+    color: #ffffff;
+}
+.em-hub-card:hover .em-card-icon svg path {
+    fill: #ffffff;
+}
+
+/* Titolo card */
+.em-hub-card h4 {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    color: #1e293b;
+    line-height: 1.3;
+}
+
+/* Descrizione card */
+.em-hub-card p {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0 0 20px 0;
+    line-height: 1.6;
+    flex-grow: 1;
+}
+
+/* Bottone card */
+.em-hub-card .em-card-btn {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0284c7;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    letter-spacing: 0.3px;
+    transition: gap 0.2s ease;
+    text-transform: uppercase;
+}
+.em-hub-card:hover .em-card-btn {
+    gap: 10px;
+}
+
+/* Modern Forms & Fields */
+.em-form-section {
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+}
+.em-form-section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 25px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e2e8f0;
+}
+.em-form-group {
+    margin-bottom: 20px;
+}
+.em-form-group:last-child {
+    margin-bottom: 0;
+}
+.em-form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 8px;
+}
+.em-form-group input[type="text"],
+.em-form-group input[type="email"],
+.em-form-group input[type="url"],
+.em-form-group input[type="password"],
+.em-form-group input[type="date"],
+.em-form-group select,
+.em-form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #0f172a;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+.em-form-group input:focus,
+.em-form-group select:focus,
+.em-form-group textarea:focus {
+    border-color: #0284c7;
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.1);
+}
+.em-form-row-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+.em-form-row-grid-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Time Picker Customization */
+.em-custom-time-selects {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.em-time-select {
+    padding: 10px 14px !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    background-color: #ffffff !important;
+    min-width: 80px !important;
+}
+.em-time-sep {
+    font-weight: bold;
+    font-size: 18px;
+    color: #64748b;
+}
+
+/* Checkbox Modern Switches */
+.em-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #334155;
+    user-select: none;
+}
+.em-checkbox-label input[type="checkbox"] {
+    appearance: none;
+    width: 44px;
+    height: 22px;
+    background-color: #cbd5e1;
+    border-radius: 11px;
+    position: relative;
+    outline: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: none !important;
+    padding: 0 !important;
+}
+.em-checkbox-label input[type="checkbox"]:checked {
+    background-color: #10b981;
+}
+.em-checkbox-label input[type="checkbox"]::before {
+    content: "";
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    background-color: #ffffff;
+    transition: left 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.em-checkbox-label input[type="checkbox"]:checked::before {
+    left: 24px;
+}
+
+/* Hidden elements */
+.em-hidden {
+    display: none !important;
+}
+
+/* Inline Creator boxes */
+.em-inline-creator {
+    background: #ffffff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 15px;
+}
+.em-inline-creator h5 {
+    margin: 0 0 15px 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* Dashboard views */
+.em-dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+.em-dashboard-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+.em-dashboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+.em-dashboard-table th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    text-align: left;
+    padding: 14px 20px;
+    font-size: 14px;
+    border-bottom: 2px solid #e2e8f0;
+}
+.em-dashboard-table td {
+    padding: 16px 20px;
+    font-size: 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+.em-dashboard-table tr:hover td {
+    background: #fafafa;
+}
+
+/* Badges */
+.em-status-badge {
+    display: inline-flex;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+.em-status-badge.publish {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+.em-status-badge.draft {
+    background-color: #f1f5f9;
+    color: #475569;
+}
+.em-status-badge.pending {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+/* Buttons */
+.em-submit-btn {
+    background-color: #0284c7;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none !important;
+}
+.em-submit-btn:hover {
+    background-color: #0369a1;
+}
+.em-submit-btn.link-btn {
+    padding: 10px 18px;
+    font-size: 14px;
+}
+
+.em-form-actions {
+    margin-top: 30px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Secondary Button Details */
+.em-secondary-btn {
+    background-color: #475569;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.em-secondary-btn:hover {
+    background-color: #334155;
+}
+.em-secondary-btn.btn-danger {
+    background-color: #ef4444;
+}
+.em-secondary-btn.btn-danger:hover {
+    background-color: #dc2626;
+}
+
+.em-action-btn.edit-btn {
+    background: #f0f9ff;
+    color: #0284c7;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+.em-action-btn.edit-btn:hover {
+    background: #0284c7;
+    color: #ffffff;
+}
+
+/* Recurrence box */
+.em-recurrence-rule-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    background: #ffffff;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+.em-form-select-sm, .em-form-input-sm {
+    padding: 8px 12px;
+    font-size: 13px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #ffffff;
+}
+
+/* Empty MSG */
+.em-empty-msg {
+    padding: 40px;
+    text-align: center;
+    color: #64748b;
+    border: 2px dashed #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+    font-size: 15px;
+}
+
+/* CSS aggiuntivo per Multi-select */
+.em-multi-select-container {
+    margin-top: 5px;
+}
+.em-multi-select option {
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+    font-weight: 500;
+}
+.em-multi-select option:checked {
+    background: #0284c7 linear-gradient(0deg, #0284c7 0%, #0284c7 100%);
+    color: #ffffff !important;
+}
+
+/* Responsive adjustment */
+@media screen and (max-width: 600px) {
+    .em-form-container {
+        padding: 20px;
+    }
+    .em-hub-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .em-hub-header-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+    .em-profile-btn, .em-logout-btn {
+        justify-content: center;
+    }
+    .em-hub-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+@media screen and (max-width: 400px) {
+    .em-hub-grid {
+        grid-template-columns: 1fr;
+    }
+}
