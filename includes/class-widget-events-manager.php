@@ -7,7 +7,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
     public function get_title() { return esc_html__( 'Front-end Events Manager', 'open-events' ); }
     public function get_icon() { return 'eicon-form-horizontal'; }
     public function get_categories() { return [ 'open-events', 'general' ]; }
-    public function get_style_depends() { return [ 'open-events-manager-style' ]; }
+    public function get_style_depends() { return [ 'eicons', 'open-events-manager-style' ]; }
     public function get_script_depends() { return [ 'open-events-manager-script' ]; }
 
     protected function register_controls() {
