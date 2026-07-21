@@ -244,6 +244,48 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
         <?php
     }
 
+    private function render_image_dropzone( $edit_post, $help_text = '' ) {
+        $thumb_url = ( $edit_post && has_post_thumbnail( $edit_post->ID ) ) ? get_the_post_thumbnail_url( $edit_post->ID, 'thumbnail' ) : '';
+        ?>
+        <div class="em-dropzone">
+            <input type="file" name="logo_image" accept="image/*" class="em-dropzone-input">
+            <div class="em-dropzone-preview" <?php echo $thumb_url ? '' : 'style="display:none;"'; ?>>
+                <img src="<?php echo esc_url( $thumb_url ); ?>" alt="">
+                <button type="button" class="em-dropzone-remove" aria-label="<?php esc_attr_e( 'Rimuovi immagine', 'open-events' ); ?>">&times;</button>
+            </div>
+            <div class="em-dropzone-empty" <?php echo $thumb_url ? 'style="display:none;"' : ''; ?>>
+                <i class="eicon-upload" aria-hidden="true"></i>
+                <p>
+                    <strong><?php esc_html_e( 'Trascina un\'immagine qui', 'open-events' ); ?></strong><br>
+                    <?php esc_html_e( 'oppure clicca per scegliere un file', 'open-events' ); ?>
+                </p>
+            </div>
+        </div>
+        <?php if ( $help_text ) : ?>
+            <small class="em-field-help"><?php echo esc_html( $help_text ); ?></small>
+        <?php endif; ?>
+        <?php
+    }
+
+    private function render_city_field( $field_name, $current_value ) {
+        $cities = open_events_get_available_cities();
+
+        if ( empty( $cities ) ) {
+            ?>
+            <input type="text" name="<?php echo esc_attr( $field_name ); ?>" value="<?php echo esc_attr( $current_value ); ?>" placeholder="<?php esc_attr_e( 'Es. Iseo', 'open-events' ); ?>">
+            <?php
+            return;
+        }
+        ?>
+        <select name="<?php echo esc_attr( $field_name ); ?>" class="em-form-select">
+            <option value=""><?php esc_html_e( '-- Scegli una città --', 'open-events' ); ?></option>
+            <?php foreach ( $cities as $city ) : ?>
+                <option value="<?php echo esc_attr( $city ); ?>" <?php selected( $current_value, $city ); ?>><?php echo esc_html( $city ); ?></option>
+            <?php endforeach; ?>
+        </select>
+        <?php
+    }
+
     protected function render() {
         if ( ! is_user_logged_in() ) {
             echo '<div class="em-alert error">' . esc_html__( 'Devi aver effettuato l\'accesso per inserire un evento.', 'open-events' ) . '</div>';
@@ -888,14 +930,20 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
 
                     <div class="em-form-group">
                         <label><?php esc_html_e( 'Descrizione Evento *', 'open-events' ); ?></label>
-                        <?php 
+                        <?php
                         $content_value = $edit_post ? $edit_post->post_content : '';
-                        wp_editor( $content_value, 'post_content', [
-                            'media_buttons' => false,
-                            'textarea_rows' => 8,
-                            'teeny'         => true,
-                            'quicktags'     => true,
-                        ] );
+                        if ( 'classic' === open_events_get_description_editor_mode() ) :
+                            ?>
+                            <textarea name="post_content" rows="8" class="em-form-textarea"><?php echo esc_textarea( $content_value ); ?></textarea>
+                            <?php
+                        else :
+                            wp_editor( $content_value, 'post_content', [
+                                'media_buttons' => false,
+                                'textarea_rows' => 8,
+                                'teeny'         => true,
+                                'quicktags'     => true,
+                            ] );
+                        endif;
                         ?>
                     </div>
                 </div>
@@ -1080,7 +1128,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                                     </div>
                                     <div class="em-form-group">
                                         <label><?php esc_html_e( 'Città', 'open-events' ); ?></label>
-                                        <input type="text" name="new_venue_city" placeholder="Es. Iseo">
+                                        <?php $this->render_city_field( 'new_venue_city', '' ); ?>
                                     </div>
                                     <div class="em-form-group">
                                         <label><?php esc_html_e( 'CAP', 'open-events' ); ?></label>
@@ -1148,14 +1196,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                         <h3 class="em-form-section-title"><?php esc_html_e( '5. Immagine dell\'Evento', 'open-events' ); ?></h3>
                         <div class="em-form-group">
                             <label><?php esc_html_e( 'Immagine Copertina Evento', 'open-events' ); ?></label>
-                            <?php if ( $edit_post && has_post_thumbnail( $edit_post->ID ) ): ?>
-                                <div class="em-current-image">
-                                    <?php echo get_the_post_thumbnail( $edit_post->ID, 'thumbnail' ); ?>
-                                    <p class="em-img-hint"><?php esc_html_e( 'Immagine attualmente caricata', 'open-events' ); ?></p>
-                                </div>
-                            <?php endif; ?>
-                            <input type="file" name="logo_image" accept="image/*" class="em-file-input">
-                            <small class="em-field-help"><?php esc_html_e( 'Formato consigliato JPG o PNG. Dimensione massima 2MB.', 'open-events' ); ?></small>
+                            <?php $this->render_image_dropzone( $edit_post, esc_html__( 'Formato consigliato JPG o PNG. Dimensione massima 2MB.', 'open-events' ) ); ?>
                         </div>
                     </div>
                 <?php elseif ( 'tribe_organizer' === $post_type ): ?>
@@ -1175,12 +1216,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                         </div>
                         <div class="em-form-group">
                             <label><?php esc_html_e( 'Logo / Foto (Immagine in evidenza)', 'open-events' ); ?></label>
-                            <?php if ( $edit_post && has_post_thumbnail( $edit_post->ID ) ): ?>
-                                <div class="em-current-image">
-                                    <?php echo get_the_post_thumbnail( $edit_post->ID, 'thumbnail' ); ?>
-                                </div>
-                            <?php endif; ?>
-                            <input type="file" name="logo_image" accept="image/*">
+                            <?php $this->render_image_dropzone( $edit_post ); ?>
                         </div>
                     </div>
                 <?php else: ?>
@@ -1192,7 +1228,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                         </div>
                         <div class="em-form-group">
                             <label><?php esc_html_e( 'Città', 'open-events' ); ?></label>
-                            <input type="text" name="_VenueCity" value="<?php echo esc_attr( $edit_post ? get_post_meta( $edit_post->ID, '_VenueCity', true ) : '' ); ?>">
+                            <?php $this->render_city_field( '_VenueCity', $edit_post ? get_post_meta( $edit_post->ID, '_VenueCity', true ) : '' ); ?>
                         </div>
                         <div class="em-form-group">
                             <label><?php esc_html_e( 'Paese', 'open-events' ); ?></label>

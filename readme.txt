@@ -4,7 +4,7 @@ Tags: events, elementor, the-events-calendar, front-end submission
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,11 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * I nuovi eventi vengono salvati come "in attesa di revisione" (pending) cosi' un amministratore puo' approvarli prima della pubblicazione; luoghi e organizzatori restano in bozza.
 
 == Changelog ==
+
+= 1.0.3 =
+* Nuovo: opzione "Descrizione Evento" in Impostazioni per scegliere tra campo classico (testo semplice) ed editor visuale di WordPress per la descrizione di eventi, luoghi e organizzatori.
+* Nuovo: opzione "Città disponibili" in Impostazioni (una per riga); se configurata, gli utenti scelgono la città del luogo da un menu a tendina invece di scriverla liberamente, sia nel form evento (creazione rapida luogo) sia nel form luogo.
+* Miglioramento: campo immagine (copertina evento e logo organizzatore) sostituito con un'area drag-and-drop con anteprima e pulsante per rimuovere la selezione.
 
 = 1.0.2 =
 * Nuovo: pagina "Open Events" nel menu admin (subito dopo "Eventi") con sezione Impostazioni per scegliere lo stato default assegnato ai nuovi eventi inseriti dagli utenti (Bozza / In attesa di revisione / Pubblicato).

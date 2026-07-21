@@ -11,7 +11,8 @@ class EventsManagerHandler extends elementorModules.frontend.handlers.Base {
                 recurringSwitch: '.em-recurring-switch',
                 recurringDetails: '#em-recurring-details',
                 timeFields: '.em-time-field-group',
-                categorySelect: '.em-category-select'
+                categorySelect: '.em-category-select',
+                dropzone: '.em-dropzone'
             }
         };
     }
@@ -26,7 +27,8 @@ class EventsManagerHandler extends elementorModules.frontend.handlers.Base {
             $recurringSwitch: this.$element.find(this.getSettings('selectors').recurringSwitch),
             $recurringDetails: this.$element.find(this.getSettings('selectors').recurringDetails),
             $timeFields: this.$element.find(this.getSettings('selectors').timeFields),
-            $categorySelect: this.$element.find(this.getSettings('selectors').categorySelect)
+            $categorySelect: this.$element.find(this.getSettings('selectors').categorySelect),
+            $dropzone: this.$element.find(this.getSettings('selectors').dropzone)
         };
     }
     bindEvents() {
@@ -73,6 +75,63 @@ class EventsManagerHandler extends elementorModules.frontend.handlers.Base {
         toggleRecurringFields(); // Run on load
 
         this.initCategoryPicker();
+        this.initImageDropzones();
+    }
+
+    initImageDropzones() {
+        this.elements.$dropzone.each(function () {
+            const $zone = jQuery(this);
+            if ($zone.data('emDropzoneInit')) {
+                return;
+            }
+            $zone.data('emDropzoneInit', true);
+
+            const $input = $zone.find('.em-dropzone-input');
+            const $preview = $zone.find('.em-dropzone-preview');
+            const $previewImg = $preview.find('img');
+            const $empty = $zone.find('.em-dropzone-empty');
+
+            const showPreview = (src) => {
+                $previewImg.attr('src', src);
+                $preview.show();
+                $empty.hide();
+            };
+
+            const showEmpty = () => {
+                $previewImg.attr('src', '');
+                $preview.hide();
+                $empty.show();
+            };
+
+            $input.on('change', function () {
+                const file = this.files && this.files[0];
+                if (!file) {
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => showPreview(e.target.result);
+                reader.readAsDataURL(file);
+            });
+
+            $zone.on('dragenter dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                $zone.addClass('is-dragover');
+            });
+
+            $zone.on('dragleave drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                $zone.removeClass('is-dragover');
+            });
+
+            $zone.on('click', '.em-dropzone-remove', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                $input.val('');
+                showEmpty();
+            });
+        });
     }
 
     initCategoryPicker() {

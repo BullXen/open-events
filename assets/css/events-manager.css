@@ -383,6 +383,80 @@ p.em-section-subtitle {
     gap: 20px;
 }
 
+/* Image Dropzone */
+.em-dropzone {
+    position: relative;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    background-color: #f8fafc;
+    padding: 28px 20px;
+    text-align: center;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.em-dropzone.is-dragover {
+    border-color: #0284c7;
+    background-color: #f0f9ff;
+}
+.em-dropzone-input {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+.em-dropzone-empty i {
+    display: block;
+    font-size: 28px;
+    color: #94a3b8;
+    margin-bottom: 10px;
+}
+.em-dropzone-empty p {
+    margin: 0;
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.6;
+}
+.em-dropzone-empty strong {
+    color: #334155;
+    font-size: 14px;
+}
+.em-dropzone-preview {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+}
+.em-dropzone-preview img {
+    display: block;
+    max-width: 100%;
+    max-height: 180px;
+    border-radius: 8px;
+    margin: 0 auto;
+}
+.em-dropzone-remove {
+    position: absolute;
+    z-index: 3;
+    top: -10px;
+    right: -10px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background-color: #ef4444;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+.em-dropzone-remove:hover {
+    background-color: #dc2626;
+}
+
 /* Time Picker Customization */
 .em-custom-time-selects {
     display: flex;
