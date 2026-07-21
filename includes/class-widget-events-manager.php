@@ -740,8 +740,8 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     <?php if ( 'tribe_events' === $post_type && ! is_wp_error( $categories ) && ! empty( $categories ) ): ?>
                         <div class="em-form-group">
                             <label><?php esc_html_e( 'Categoria Evento *', 'open-events' ); ?></label>
-                            <select name="event_category[]" required multiple class="em-form-select" style="height: auto; min-height: 120px;">
-                                <?php 
+                            <select name="event_category[]" required multiple class="em-form-select em-category-select" style="height: auto; min-height: 120px;">
+                                <?php
                                 $current_cats = $edit_post ? wp_get_object_terms( $edit_post->ID, 'tribe_events_cat', [ 'fields' => 'ids' ] ) : [];
                                 foreach ( $categories as $cat ): ?>
                                     <option value="<?php echo esc_attr( $cat->term_id ); ?>" <?php echo in_array( $cat->term_id, $current_cats ) ? 'selected' : ''; ?>>
@@ -749,7 +749,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                                     </option>
                                 <?php endforeach; ?>
                             </select>
-                            <small class="em-field-help"><?php esc_html_e( 'Tieni premuto Ctrl (Windows) o Cmd (Mac) per selezionare più categorie.', 'open-events' ); ?></small>
+                            <small class="em-field-help"><?php esc_html_e( 'Cerca e clicca per aggiungere una categoria. Clicca la × su un tag per rimuoverla.', 'open-events' ); ?></small>
                         </div>
                     <?php endif; ?>
 
