@@ -4,7 +4,7 @@ Tags: events, elementor, the-events-calendar, front-end submission
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,13 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * I nuovi eventi vengono salvati come "in attesa di revisione" (pending) cosi' un amministratore puo' approvarli prima della pubblicazione; luoghi e organizzatori restano in bozza.
 
 == Changelog ==
+
+= 1.0.2 =
+* Nuovo: pagina "Open Events" nel menu admin (subito dopo "Eventi") con sezione Impostazioni per scegliere lo stato default assegnato ai nuovi eventi inseriti dagli utenti (Bozza / In attesa di revisione / Pubblicato).
+* Nuovo: sidebar di navigazione sempre visibile nel Portale Hub (Dashboard, I Miei Eventi, I Miei Luoghi, I Miei Organizzatori, Profilo) e breadcrumb gerarchiche (es. Dashboard > I Miei Eventi > Nuovo Evento).
+* Miglioramento: pulsante "Annulla" in fondo al form evento/luogo/organizzatore, e link di ritorno con etichetta corretta in base alla sezione.
+* Miglioramento: rinominata "Portale Gestione Eventi" in "Dashboard" nei testi del portale.
+* Miglioramento: le liste "I Miei Eventi/Luoghi/Organizzatori" ora mostrano righe con miniatura/icona e un dettaglio contestuale (data evento, indirizzo luogo, email organizzatore) al posto della tabella semplice.
 
 = 1.0.1 =
 * Fix: gli eventi in bozza/in attesa di revisione non comparivano nella lista "I Miei Eventi" dell'autore sul front-end (WP_Query esclude gli stati protetti senza `perm => readable`).

@@ -3,7 +3,7 @@
 Plugin Name: Open Events
 Plugin URI: https://github.com/BullXen/open-events
 Description: Plugin per la gestione di eventi. Aggiunge a Elementor un widget che permette agli utenti loggati di gestire da front-end eventi, luoghi e organizzatori (The Events Calendar) come un portale.
-Version: 1.0.1
+Version: 1.0.2
 Author: BullXen
 GitHub Plugin URI: BullXen/open-events
 Primary Branch: main
@@ -14,9 +14,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OPEN_EVENTS_VERSION', '1.0.1' );
+define( 'OPEN_EVENTS_VERSION', '1.0.2' );
 define( 'OPEN_EVENTS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OPEN_EVENTS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+
+// Richiesto sempre (non solo in admin): il widget front-end legge
+// open_events_get_default_event_status() quando un utente salva un evento.
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/admin-settings.php';
 
 /**
  * Verifica che Elementor sia attivo prima di caricare il widget.

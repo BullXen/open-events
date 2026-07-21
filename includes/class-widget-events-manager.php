@@ -194,6 +194,56 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
         $this->end_controls_section();
     }
 
+    private function render_portal_sidebar( $active_view, $current_user ) {
+        $current_user_id = $current_user->ID;
+        $nav_items = [
+            ''                => [ 'label' => esc_html__( 'Dashboard', 'open-events' ), 'icon' => 'eicon-home' ],
+            'tribe_events'    => [ 'label' => esc_html__( 'I Miei Eventi', 'open-events' ), 'icon' => 'eicon-calendar' ],
+            'tribe_venue'     => [ 'label' => esc_html__( 'I Miei Luoghi', 'open-events' ), 'icon' => 'eicon-google-maps' ],
+            'tribe_organizer' => [ 'label' => esc_html__( 'I Miei Organizzatori', 'open-events' ), 'icon' => 'eicon-person' ],
+            'profile'         => [ 'label' => esc_html__( 'Profilo', 'open-events' ), 'icon' => 'eicon-person' ],
+        ];
+        ?>
+        <aside class="em-portal-sidebar">
+            <div class="em-portal-sidebar-user">
+                <?php echo get_avatar( $current_user_id, 40 ); ?>
+                <span><?php echo esc_html( $current_user->display_name ); ?></span>
+            </div>
+            <nav class="em-portal-sidebar-nav">
+                <?php foreach ( $nav_items as $view_key => $item ) :
+                    $url = ( '' === $view_key )
+                        ? remove_query_arg( [ 'view', 'edit_id', 'action', 'type' ] )
+                        : add_query_arg( 'view', $view_key, remove_query_arg( [ 'edit_id', 'action', 'type' ] ) );
+                    $is_active = ( $active_view === $view_key );
+                    ?>
+                    <a href="<?php echo esc_url( $url ); ?>" class="em-portal-sidebar-link<?php echo $is_active ? ' is-active' : ''; ?>">
+                        <i class="<?php echo esc_attr( $item['icon'] ); ?>" aria-hidden="true"></i>
+                        <?php echo esc_html( $item['label'] ); ?>
+                    </a>
+                <?php endforeach; ?>
+            </nav>
+            <a href="<?php echo esc_url( wp_logout_url( home_url() ) ); ?>" class="em-portal-sidebar-logout">
+                <i class="eicon-exit" aria-hidden="true"></i> <?php esc_html_e( 'Esci', 'open-events' ); ?>
+            </a>
+        </aside>
+        <?php
+    }
+
+    private function render_breadcrumbs( array $trail ) {
+        ?>
+        <nav class="em-breadcrumbs" aria-label="<?php esc_attr_e( 'Percorso di navigazione', 'open-events' ); ?>">
+            <?php foreach ( $trail as $i => $crumb ) : ?>
+                <?php if ( $i > 0 ) : ?><span class="em-breadcrumb-sep">/</span><?php endif; ?>
+                <?php if ( ! empty( $crumb['url'] ) ) : ?>
+                    <a href="<?php echo esc_url( $crumb['url'] ); ?>"><?php echo esc_html( $crumb['label'] ); ?></a>
+                <?php else : ?>
+                    <span class="em-breadcrumb-current"><?php echo esc_html( $crumb['label'] ); ?></span>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </nav>
+        <?php
+    }
+
     protected function render() {
         if ( ! is_user_logged_in() ) {
             echo '<div class="em-alert error">' . esc_html__( 'Devi aver effettuato l\'accesso per inserire un evento.', 'open-events' ) . '</div>';
@@ -215,6 +265,36 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             }
         } else {
             $post_type = $settings['post_type_mode'];
+        }
+
+        $post_type_labels = [
+            'tribe_events'    => [
+                'plural'   => esc_html__( 'I Miei Eventi', 'open-events' ),
+                'singular' => esc_html__( 'Evento', 'open-events' ),
+                'icon'     => 'eicon-calendar',
+            ],
+            'tribe_organizer' => [
+                'plural'   => esc_html__( 'I Miei Organizzatori', 'open-events' ),
+                'singular' => esc_html__( 'Organizzatore', 'open-events' ),
+                'icon'     => 'eicon-person',
+            ],
+            'tribe_venue'     => [
+                'plural'   => esc_html__( 'I Miei Luoghi', 'open-events' ),
+                'singular' => esc_html__( 'Luogo', 'open-events' ),
+                'icon'     => 'eicon-google-maps',
+            ],
+        ];
+        $label_plural   = $post_type_labels[ $post_type ]['plural'] ?? '';
+        $label_singular = $post_type_labels[ $post_type ]['singular'] ?? '';
+        $label_icon     = $post_type_labels[ $post_type ]['icon'] ?? 'eicon-editor-link';
+
+        // La sidebar/breadcrumb persistenti hanno senso solo nel Portale Completo:
+        // le altre modalità sono pensate per essere embeddate isolate in pagine dedicate.
+        $show_sidebar = ( 'hub' === $action_mode );
+        if ( $show_sidebar ) {
+            echo '<div class="em-portal-layout">';
+            $this->render_portal_sidebar( $post_type, $current_user );
+            echo '<div class="em-portal-main">';
         }
 
         // Handle profile page
@@ -264,8 +344,14 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             }
             ?>
             <div class="em-form-container em-form-view">
+                <?php
+                $this->render_breadcrumbs( [
+                    [ 'label' => esc_html__( 'Dashboard', 'open-events' ), 'url' => remove_query_arg( [ 'view' ] ) ],
+                    [ 'label' => esc_html__( 'Profilo', 'open-events' ), 'url' => '' ],
+                ] );
+                ?>
                 <div class="em-back-link">
-                    <a href="<?php echo esc_url( remove_query_arg( [ 'view' ] ) ); ?>">← <?php esc_html_e( 'Torna al Portale', 'open-events' ); ?></a>
+                    <a href="<?php echo esc_url( remove_query_arg( [ 'view' ] ) ); ?>">← <?php esc_html_e( 'Torna alla Dashboard', 'open-events' ); ?></a>
                 </div>
 
                 <h2><?php esc_html_e( 'Modifica Profilo', 'open-events' ); ?></h2>
@@ -322,6 +408,9 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                 </form>
             </div>
             <?php
+            if ( $show_sidebar ) {
+                echo '</div></div>';
+            }
             return;
         }
 
@@ -334,16 +423,8 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                         <?php echo get_avatar( $current_user_id, 48 ); ?>
                         <div class="em-hub-user-meta">
                             <h3><?php printf( esc_html__( 'Ciao, %s!', 'open-events' ), esc_html( $current_user->display_name ) ); ?></h3>
-                            <p><?php esc_html_e( 'Benvenuto nel tuo Portale Gestione Eventi', 'open-events' ); ?></p>
+                            <p><?php esc_html_e( 'Benvenuto nella tua Dashboard', 'open-events' ); ?></p>
                         </div>
-                    </div>
-                    <div class="em-hub-header-actions">
-                        <a href="<?php echo esc_url( add_query_arg( 'view', 'profile' ) ); ?>" class="em-profile-btn">
-                            <i class="eicon-person" aria-hidden="true"></i> <?php esc_html_e( 'Modifica Profilo', 'open-events' ); ?>
-                        </a>
-                        <a href="<?php echo esc_url( wp_logout_url( home_url() ) ); ?>" class="em-logout-btn">
-                            <i class="eicon-exit" aria-hidden="true"></i> <?php esc_html_e( 'Esci', 'open-events' ); ?>
-                        </a>
                     </div>
                 </div>
 
@@ -400,6 +481,9 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                 </div>
             </div>
             <?php
+            if ( $show_sidebar ) {
+                echo '</div></div>';
+            }
             return;
         }
 
@@ -438,22 +522,19 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                 'posts_per_page' => -1,
                 'perm'           => 'readable',
             ]);
-
-            if ( 'tribe_events' === $post_type ) {
-                $label_plural = esc_html__( 'I Miei Eventi', 'open-events' );
-                $label_singular = esc_html__( 'Evento', 'open-events' );
-            } elseif ( 'tribe_organizer' === $post_type ) {
-                $label_plural = esc_html__( 'I Miei Organizzatori', 'open-events' );
-                $label_singular = esc_html__( 'Organizzatore', 'open-events' );
-            } else {
-                $label_plural = esc_html__( 'I Miei Luoghi', 'open-events' );
-                $label_singular = esc_html__( 'Luogo', 'open-events' );
-            }
             ?>
             <div class="em-form-container em-dashboard-view">
+                <?php if ( $show_sidebar ) : ?>
+                    <?php
+                    $this->render_breadcrumbs( [
+                        [ 'label' => esc_html__( 'Dashboard', 'open-events' ), 'url' => remove_query_arg( [ 'view', 'edit_id', 'action', 'type' ] ) ],
+                        [ 'label' => $label_plural, 'url' => '' ],
+                    ] );
+                    ?>
+                <?php endif; ?>
                 <div class="em-back-link">
                     <?php if ( 'hub' === $action_mode ) : ?>
-                        <a href="<?php echo esc_url( remove_query_arg( [ 'view', 'edit_id', 'action', 'type' ] ) ); ?>">← <?php esc_html_e( 'Torna al Portale', 'open-events' ); ?></a>
+                        <a href="<?php echo esc_url( remove_query_arg( [ 'view', 'edit_id', 'action', 'type' ] ) ); ?>">← <?php esc_html_e( 'Torna alla Dashboard', 'open-events' ); ?></a>
                     <?php endif; ?>
                 </div>
 
@@ -465,33 +546,56 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                 </div>
 
                 <?php if ( empty( $user_posts ) ): ?>
-                    <p class="em-empty-msg"><?php printf( esc_html__( 'Non hai ancora creato nessun %s.', 'open-events' ), strtolower( $label_singular ) ); ?></p>
+                    <div class="em-empty-state">
+                        <i class="<?php echo esc_attr( $label_icon ); ?>" aria-hidden="true"></i>
+                        <p class="em-empty-msg"><?php printf( esc_html__( 'Non hai ancora creato nessun %s.', 'open-events' ), strtolower( $label_singular ) ); ?></p>
+                    </div>
                 <?php else: ?>
-                    <table class="em-dashboard-table">
-                        <thead>
-                            <tr>
-                                <th><?php esc_html_e( 'Nome', 'open-events' ); ?></th>
-                                <th><?php esc_html_e( 'Stato', 'open-events' ); ?></th>
-                                <th style="text-align: right;"><?php esc_html_e( 'Azioni', 'open-events' ); ?></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ( $user_posts as $p ): ?>
-                                <tr>
-                                    <td><strong><?php echo esc_html( $p->post_title ); ?></strong></td>
-                                    <td><span class="em-status-badge <?php echo esc_attr( $p->post_status ); ?>"><?php echo esc_html( get_post_status_object($p->post_status)->label ); ?></span></td>
-                                    <td style="text-align: right;">
-                                        <a href="<?php echo esc_url( add_query_arg( 'edit_id', $p->ID ) ); ?>" class="em-action-btn edit-btn">
-                                            <?php esc_html_e( 'Modifica', 'open-events' ); ?>
-                                        </a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                    <div class="em-items-list">
+                        <?php foreach ( $user_posts as $p ):
+                            $thumb_url = get_the_post_thumbnail_url( $p->ID, 'thumbnail' );
+                            $meta_line = '';
+
+                            if ( 'tribe_events' === $post_type ) {
+                                $start_date = get_post_meta( $p->ID, '_EventStartDate', true );
+                                if ( $start_date ) {
+                                    $meta_line = date_i18n( get_option( 'date_format' ) . ' - H:i', strtotime( $start_date ) );
+                                }
+                            } elseif ( 'tribe_venue' === $post_type ) {
+                                $address = get_post_meta( $p->ID, '_VenueAddress', true );
+                                $city    = get_post_meta( $p->ID, '_VenueCity', true );
+                                $meta_line = trim( implode( ', ', array_filter( [ $address, $city ] ) ) );
+                            } else {
+                                $meta_line = get_post_meta( $p->ID, '_OrganizerEmail', true );
+                            }
+                            ?>
+                            <div class="em-item-row">
+                                <div class="em-item-thumb">
+                                    <?php if ( $thumb_url ) : ?>
+                                        <img src="<?php echo esc_url( $thumb_url ); ?>" alt="">
+                                    <?php else : ?>
+                                        <i class="<?php echo esc_attr( $label_icon ); ?>" aria-hidden="true"></i>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="em-item-info">
+                                    <strong class="em-item-title"><?php echo esc_html( $p->post_title ); ?></strong>
+                                    <?php if ( $meta_line ) : ?>
+                                        <span class="em-item-meta"><?php echo esc_html( $meta_line ); ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <span class="em-status-badge <?php echo esc_attr( $p->post_status ); ?>"><?php echo esc_html( get_post_status_object( $p->post_status )->label ); ?></span>
+                                <a href="<?php echo esc_url( add_query_arg( 'edit_id', $p->ID ) ); ?>" class="em-action-btn edit-btn">
+                                    <?php esc_html_e( 'Modifica', 'open-events' ); ?>
+                                </a>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
                 <?php endif; ?>
             </div>
             <?php
+            if ( $show_sidebar ) {
+                echo '</div></div>';
+            }
             return;
         }
 
@@ -500,17 +604,26 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
         if ( 'edit' === $current_action ) {
             if ( ! $edit_post_id ) {
                 echo '<div class="em-alert warning">' . esc_html__( 'Nessun elemento specificato per la modifica.', 'open-events' ) . '</div>';
+                if ( $show_sidebar ) {
+                    echo '</div></div>';
+                }
                 return;
             }
 
             $edit_post = get_post( $edit_post_id );
             if ( ! $edit_post || $edit_post->post_type !== $post_type ) {
                 echo '<div class="em-alert error">' . esc_html__( 'Elemento non trovato.', 'open-events' ) . '</div>';
+                if ( $show_sidebar ) {
+                    echo '</div></div>';
+                }
                 return;
             }
 
             if ( intval( $edit_post->post_author ) !== $current_user_id ) {
                 echo '<div class="em-alert error">' . esc_html__( 'Non hai i permessi per modificare questo elemento.', 'open-events' ) . '</div>';
+                if ( $show_sidebar ) {
+                    echo '</div></div>';
+                }
                 return;
             }
         }
@@ -529,7 +642,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     'post_title'   => $title,
                     'post_content' => $content,
                     'post_type'    => $post_type,
-                    'post_status'  => ( 'tribe_events' === $post_type ) ? 'pending' : 'draft',
+                    'post_status'  => ( 'tribe_events' === $post_type ) ? open_events_get_default_event_status() : 'draft',
                 ];
 
                 if ( 'edit' === $current_action ) {
@@ -683,6 +796,9 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     if ( ! empty( $redirect_target ) ) {
                         echo '<script type="text/javascript">window.location.href = "' . esc_url_raw( $redirect_target ) . '";</script>';
                         echo '<div class="em-form-container em-form-view"><div class="em-alert success">' . esc_html__( 'Salvataggio completato! Reindirizzamento in corso...', 'open-events' ) . '</div></div>';
+                        if ( $show_sidebar ) {
+                            echo '</div></div>';
+                        }
                         return;
                     }
 
@@ -698,10 +814,26 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
         $venues = get_posts( [ 'post_type' => 'tribe_venue', 'posts_per_page' => -1, 'post_status' => 'publish' ] );
         $organizers = get_posts( [ 'post_type' => 'tribe_organizer', 'posts_per_page' => -1, 'post_status' => 'publish', 'author' => $current_user_id ] );
 
+        $form_list_url = remove_query_arg( [ 'edit_id', 'action', 'type' ] );
+        $form_back_label = ! empty( $label_plural ) ? $label_plural : esc_html__( 'Dashboard', 'open-events' );
         ?>
         <div class="em-form-container em-form-view">
+            <?php if ( $show_sidebar ) : ?>
+                <?php
+                $this->render_breadcrumbs( [
+                    [ 'label' => esc_html__( 'Dashboard', 'open-events' ), 'url' => remove_query_arg( [ 'view', 'edit_id', 'action', 'type' ] ) ],
+                    [ 'label' => $label_plural, 'url' => $form_list_url ],
+                    [
+                        'label' => 'edit' === $current_action
+                            ? sprintf( esc_html__( 'Modifica %s', 'open-events' ), $label_singular )
+                            : sprintf( esc_html__( 'Nuovo %s', 'open-events' ), $label_singular ),
+                        'url'   => '',
+                    ],
+                ] );
+                ?>
+            <?php endif; ?>
             <div class="em-back-link">
-                <a href="<?php echo esc_url( remove_query_arg( [ 'edit_id', 'action', 'type' ] ) ); ?>">← <?php esc_html_e( 'Annulla e Torna alla Dashboard', 'open-events' ); ?></a>
+                <a href="<?php echo esc_url( $form_list_url ); ?>">← <?php printf( esc_html__( 'Torna a %s', 'open-events' ), $form_back_label ); ?></a>
             </div>
 
             <h2 class="em-section-title">
@@ -1074,6 +1206,9 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                 <?php endif; ?>
 
                 <div class="em-form-actions">
+                    <a href="<?php echo esc_url( $form_list_url ); ?>" class="em-cancel-btn">
+                        <?php esc_html_e( 'Annulla', 'open-events' ); ?>
+                    </a>
                     <button type="submit" class="em-submit-btn">
                         <i class="eicon-save" aria-hidden="true"></i> <?php echo 'edit' === $current_action ? esc_html__( 'Salva Modifiche', 'open-events' ) : esc_html__( 'Invia Evento per Revisione', 'open-events' ); ?>
                     </button>
@@ -1081,6 +1216,9 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             </form>
         </div>
         <?php
+        if ( $show_sidebar ) {
+            echo '</div></div>';
+        }
     }
 
     protected function content_template() {
