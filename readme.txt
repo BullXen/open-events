@@ -1,0 +1,31 @@
+=== Open Events ===
+Contributors: BullXen
+Tags: events, elementor, the-events-calendar, front-end submission
+Requires at least: 5.8
+Tested up to: 6.7
+Requires PHP: 7.4
+Stable tag: 1.0.1
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+
+Plugin per la gestione di eventi. Aggiunge a Elementor un widget che permette agli utenti loggati di gestire da front-end eventi, luoghi e organizzatori (The Events Calendar) come un portale.
+
+== Description ==
+
+Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasforma qualunque pagina in un portale self-service per gli utenti loggati:
+
+* Portale Hub con sezioni "I Miei Eventi", "I Miei Luoghi", "I Miei Organizzatori" e modifica profilo.
+* Form di inserimento/modifica evento (date, orari, ricorrenza, categorie, luogo, organizzatore, immagine di copertina).
+* Creazione rapida di nuovi luoghi/organizzatori direttamente dal form evento.
+* I nuovi eventi vengono salvati come "in attesa di revisione" (pending) cosi' un amministratore puo' approvarli prima della pubblicazione; luoghi e organizzatori restano in bozza.
+
+== Changelog ==
+
+= 1.0.1 =
+* Fix: gli eventi in bozza/in attesa di revisione non comparivano nella lista "I Miei Eventi" dell'autore sul front-end (WP_Query esclude gli stati protetti senza `perm => readable`).
+* Fix: gli eventi nuovi/modificati vengono ora salvati come "in attesa di revisione" (pending) invece che come bozza, cosi' l'etichetta di stato riflette il flusso di moderazione. Luoghi e organizzatori restano in bozza.
+* Fix: caricamento forzato del font eicons come dipendenza di stile del widget, altrimenti alcune icone risultavano invisibili.
+* Miglioramento: selezione categorie evento sostituita con un tag picker interattivo (ricerca live + pillole rimovibili) al posto della select nativa a scelta multipla.
+
+= 1.0.0 =
+* Rilascio iniziale: struttura plugin standalone con widget Elementor "Front-end Events Manager" (portale hub, dashboard, form per eventi/luoghi/organizzatori, modifica profilo).
