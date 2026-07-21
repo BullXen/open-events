@@ -436,6 +436,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                 'post_status'    => [ 'publish', 'draft', 'pending' ],
                 'author'         => $current_user_id,
                 'posts_per_page' => -1,
+                'perm'           => 'readable',
             ]);
 
             if ( 'tribe_events' === $post_type ) {
