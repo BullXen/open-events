@@ -528,7 +528,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     'post_title'   => $title,
                     'post_content' => $content,
                     'post_type'    => $post_type,
-                    'post_status'  => 'draft',
+                    'post_status'  => ( 'tribe_events' === $post_type ) ? 'pending' : 'draft',
                 ];
 
                 if ( 'edit' === $current_action ) {
