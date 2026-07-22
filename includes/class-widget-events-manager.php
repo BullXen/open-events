@@ -583,26 +583,19 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
 
         // Handle list view
         if ( 'list' === $current_action ) {
-            // The Events Calendar (e altri plugin eventi) intercettano le query
-            // su tribe_events via pre_get_posts e forzano post_status a 'publish',
-            // sovrascrivendo quanto passato sotto. Riaffermiamo qui con priorità
-            // molto alta cosi' vinciamo sempre come ultima parola prima della SQL.
-            add_action( 'pre_get_posts', function ( $query ) use ( $post_type, $current_user_id ) {
-                if ( 'open_events_my_list' === $query->get( 'open_events_query' ) ) {
-                    $query->set( 'post_status', [ 'publish', 'draft', 'pending' ] );
-                    $query->set( 'perm', 'readable' );
-                    $query->set( 'author', $current_user_id );
-                }
-            }, 999 );
-
-            $user_posts = get_posts([
-                'post_type'         => $post_type,
-                'post_status'       => [ 'publish', 'draft', 'pending' ],
-                'author'            => $current_user_id,
-                'posts_per_page'    => -1,
-                'perm'              => 'readable',
-                'open_events_query' => 'open_events_my_list',
-            ]);
+            // Bypassa completamente WP_Query: un altro plugin (probabile The
+            // Events Calendar) filtra a livello SQL (posts_where/posts_clauses)
+            // le query su tribe_events forzando post_status a 'publish', quindi
+            // nessun $query->set() su pre_get_posts riesce a vincere. Query
+            // diretta al DB cosi' nessun filtro di terze parti puo' interferire.
+            global $wpdb;
+            $allowed_statuses = [ 'publish', 'draft', 'pending' ];
+            $status_placeholders = implode( ', ', array_fill( 0, count( $allowed_statuses ), '%s' ) );
+            $sql = $wpdb->prepare(
+                "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_author = %d AND post_status IN ($status_placeholders) ORDER BY post_date DESC",
+                array_merge( [ $post_type, $current_user_id ], $allowed_statuses )
+            );
+            $user_posts = $wpdb->get_results( $sql );
             ?>
             <div class="em-form-container em-dashboard-view">
                 <?php if ( $show_sidebar ) : ?>
