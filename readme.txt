@@ -24,6 +24,7 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 = 1.0.6 =
 * Fix: confermato bug persistente su "I Miei Eventi" nonostante 1.0.5 (priorità pre_get_posts non bastava, probabile filtro SQL diretto di un altro plugin). Query della lista ora bypassa completamente WP_Query/WordPress hooks con lettura diretta al database, nessun plugin terzo può più interferire.
 * Miglioramento: sidebar del portale ottimizzata per mobile (≤600px) — diventa una barra orizzontale scorrevole compatta, blocco utente nascosto per risparmiare spazio, invece del wrap multi-riga precedente.
+* Fix: nella barra mobile, cliccando una voce non centrale (es. 3a/4a) la pagina ricaricava sempre mostrando l'inizio della barra (Dashboard) invece della voce attiva; ora la voce attiva viene centrata automaticamente al caricamento.
 
 = 1.0.5 =
 * Fix: eventi utente (bozza/in attesa di revisione) confermati presenti in wp-admin ma assenti nella lista front-end "I Miei Eventi" — causa: un altro plugin (probabile The Events Calendar) sovrascrive post_status via pre_get_posts su ogni query tribe_events. Riaffermato lo status con priorità massima sulla query della lista.

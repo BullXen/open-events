@@ -76,6 +76,19 @@ class EventsManagerHandler extends elementorModules.frontend.handlers.Base {
 
         this.initCategoryPicker();
         this.initImageDropzones();
+        this.scrollActiveSidebarLinkIntoView();
+    }
+
+    scrollActiveSidebarLinkIntoView() {
+        const sidebarEl = this.$element.find('.em-portal-sidebar')[0];
+        const activeEl = this.$element.find('.em-portal-sidebar-link.is-active')[0];
+
+        if (!sidebarEl || !activeEl) {
+            return;
+        }
+
+        const targetScroll = activeEl.offsetLeft - (sidebarEl.clientWidth / 2) + (activeEl.clientWidth / 2);
+        sidebarEl.scrollLeft = Math.max(0, targetScroll);
     }
 
     initImageDropzones() {
