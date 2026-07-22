@@ -930,6 +930,33 @@ p.em-section-subtitle {
     .em-hub-grid {
         grid-template-columns: 1fr 1fr;
     }
+    .em-portal-sidebar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 14px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+    .em-portal-sidebar-user {
+        display: none;
+    }
+    .em-portal-sidebar-nav {
+        flex-direction: row;
+        flex-wrap: nowrap;
+    }
+    .em-portal-sidebar-link,
+    .em-portal-sidebar-logout {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+    .em-portal-sidebar-logout {
+        margin-top: 0;
+        padding: 10px 12px 10px 14px;
+        border-top: none;
+        border-left: 1px solid #f1f5f9;
+    }
     .em-item-row {
         flex-wrap: wrap;
     }
