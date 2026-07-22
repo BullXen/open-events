@@ -194,14 +194,40 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
         $this->end_controls_section();
     }
 
+    /**
+     * Icone SVG inline per l'interfaccia del portale: non dipendono dal
+     * caricamento del font eicons di Elementor, che su alcuni siti/pagine
+     * non viene incluso perché queste icone non passano dal suo Icon
+     * control (rendendole invisibili anche dopo aver forzato lo stile
+     * come dipendenza del widget).
+     */
+    private function icon_svg( $key ) {
+        $icons = [
+            'calendar' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="9" x2="21" y2="9"/></svg>',
+            'map-pin'  => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5.5-8 12-8 12s-8-6.5-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+            'person'   => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>',
+            'home'     => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
+            'exit'     => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+            'link'     => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>',
+            'save'     => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
+            'upload'   => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+        ];
+
+        return $icons[ $key ] ?? '';
+    }
+
+    private function render_icon( $key, $extra_class = '' ) {
+        echo '<span class="em-icon' . ( $extra_class ? ' ' . esc_attr( $extra_class ) : '' ) . '" aria-hidden="true">' . $this->icon_svg( $key ) . '</span>';
+    }
+
     private function render_portal_sidebar( $active_view, $current_user ) {
         $current_user_id = $current_user->ID;
         $nav_items = [
-            ''                => [ 'label' => esc_html__( 'Dashboard', 'open-events' ), 'icon' => 'eicon-home' ],
-            'tribe_events'    => [ 'label' => esc_html__( 'I Miei Eventi', 'open-events' ), 'icon' => 'eicon-calendar' ],
-            'tribe_venue'     => [ 'label' => esc_html__( 'I Miei Luoghi', 'open-events' ), 'icon' => 'eicon-google-maps' ],
-            'tribe_organizer' => [ 'label' => esc_html__( 'I Miei Organizzatori', 'open-events' ), 'icon' => 'eicon-person' ],
-            'profile'         => [ 'label' => esc_html__( 'Profilo', 'open-events' ), 'icon' => 'eicon-person' ],
+            ''                => [ 'label' => esc_html__( 'Dashboard', 'open-events' ), 'icon' => 'home' ],
+            'tribe_events'    => [ 'label' => esc_html__( 'I Miei Eventi', 'open-events' ), 'icon' => 'calendar' ],
+            'tribe_venue'     => [ 'label' => esc_html__( 'I Miei Luoghi', 'open-events' ), 'icon' => 'map-pin' ],
+            'tribe_organizer' => [ 'label' => esc_html__( 'I Miei Organizzatori', 'open-events' ), 'icon' => 'person' ],
+            'profile'         => [ 'label' => esc_html__( 'Profilo', 'open-events' ), 'icon' => 'person' ],
         ];
         ?>
         <aside class="em-portal-sidebar">
@@ -217,13 +243,13 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     $is_active = ( $active_view === $view_key );
                     ?>
                     <a href="<?php echo esc_url( $url ); ?>" class="em-portal-sidebar-link<?php echo $is_active ? ' is-active' : ''; ?>">
-                        <i class="<?php echo esc_attr( $item['icon'] ); ?>" aria-hidden="true"></i>
+                        <?php $this->render_icon( $item['icon'] ); ?>
                         <?php echo esc_html( $item['label'] ); ?>
                     </a>
                 <?php endforeach; ?>
             </nav>
             <a href="<?php echo esc_url( wp_logout_url( home_url() ) ); ?>" class="em-portal-sidebar-logout">
-                <i class="eicon-exit" aria-hidden="true"></i> <?php esc_html_e( 'Esci', 'open-events' ); ?>
+                <?php $this->render_icon( 'exit' ); ?> <?php esc_html_e( 'Esci', 'open-events' ); ?>
             </a>
         </aside>
         <?php
@@ -254,7 +280,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                 <button type="button" class="em-dropzone-remove" aria-label="<?php esc_attr_e( 'Rimuovi immagine', 'open-events' ); ?>">&times;</button>
             </div>
             <div class="em-dropzone-empty" <?php echo $thumb_url ? 'style="display:none;"' : ''; ?>>
-                <i class="eicon-upload" aria-hidden="true"></i>
+                <?php $this->render_icon( 'upload' ); ?>
                 <p>
                     <strong><?php esc_html_e( 'Trascina un\'immagine qui', 'open-events' ); ?></strong><br>
                     <?php esc_html_e( 'oppure clicca per scegliere un file', 'open-events' ); ?>
@@ -313,22 +339,22 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             'tribe_events'    => [
                 'plural'   => esc_html__( 'I Miei Eventi', 'open-events' ),
                 'singular' => esc_html__( 'Evento', 'open-events' ),
-                'icon'     => 'eicon-calendar',
+                'icon'     => 'calendar',
             ],
             'tribe_organizer' => [
                 'plural'   => esc_html__( 'I Miei Organizzatori', 'open-events' ),
                 'singular' => esc_html__( 'Organizzatore', 'open-events' ),
-                'icon'     => 'eicon-person',
+                'icon'     => 'person',
             ],
             'tribe_venue'     => [
                 'plural'   => esc_html__( 'I Miei Luoghi', 'open-events' ),
                 'singular' => esc_html__( 'Luogo', 'open-events' ),
-                'icon'     => 'eicon-google-maps',
+                'icon'     => 'map-pin',
             ],
         ];
         $label_plural   = $post_type_labels[ $post_type ]['plural'] ?? '';
         $label_singular = $post_type_labels[ $post_type ]['singular'] ?? '';
-        $label_icon     = $post_type_labels[ $post_type ]['icon'] ?? 'eicon-editor-link';
+        $label_icon     = $post_type_labels[ $post_type ]['icon'] ?? 'link';
 
         // La sidebar/breadcrumb persistenti hanno senso solo nel Portale Completo:
         // le altre modalità sono pensate per essere embeddate isolate in pagine dedicate.
@@ -474,7 +500,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     <!-- I Miei Eventi -->
                     <a href="<?php echo esc_url( add_query_arg( 'view', 'tribe_events' ) ); ?>" class="em-hub-card em-events-card">
                         <div class="em-card-icon">
-                            <i class="eicon-calendar" aria-hidden="true"></i>
+                            <?php $this->render_icon( 'calendar' ); ?>
                         </div>
                         <h4><?php esc_html_e( 'I Miei Eventi', 'open-events' ); ?></h4>
                         <p><?php esc_html_e( 'Crea e gestisci i tuoi eventi del calendario, date e descrizioni.', 'open-events' ); ?></p>
@@ -484,7 +510,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     <!-- I Miei Luoghi -->
                     <a href="<?php echo esc_url( add_query_arg( 'view', 'tribe_venue' ) ); ?>" class="em-hub-card">
                         <div class="em-card-icon">
-                            <i class="eicon-google-maps" aria-hidden="true"></i>
+                            <?php $this->render_icon( 'map-pin' ); ?>
                         </div>
                         <h4><?php esc_html_e( 'I Miei Luoghi', 'open-events' ); ?></h4>
                         <p><?php esc_html_e( 'Gestisci indirizzi, città, CAP e dettagli dei tuoi luoghi.', 'open-events' ); ?></p>
@@ -494,7 +520,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     <!-- I Miei Organizzatori -->
                     <a href="<?php echo esc_url( add_query_arg( 'view', 'tribe_organizer' ) ); ?>" class="em-hub-card">
                         <div class="em-card-icon">
-                            <i class="eicon-person" aria-hidden="true"></i>
+                            <?php $this->render_icon( 'person' ); ?>
                         </div>
                         <h4><?php esc_html_e( 'I Miei Organizzatori', 'open-events' ); ?></h4>
                         <p><?php esc_html_e( 'Gestisci dettagli dei tuoi organizzatori, telefono, sito web e loghi.', 'open-events' ); ?></p>
@@ -511,7 +537,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                                     <?php if ( ! empty( $item['button_icon']['value'] ) ) : ?>
                                         <?php \Elementor\Icons_Manager::render_icon( $item['button_icon'], [ 'aria-hidden' => 'true' ] ); ?>
                                     <?php else: ?>
-                                        <i class="eicon-editor-link" aria-hidden="true"></i>
+                                        <?php $this->render_icon( 'link' ); ?>
                                     <?php endif; ?>
                                 </div>
                                 <h4><?php echo esc_html( $item['button_text'] ); ?></h4>
@@ -589,7 +615,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
 
                 <?php if ( empty( $user_posts ) ): ?>
                     <div class="em-empty-state">
-                        <i class="<?php echo esc_attr( $label_icon ); ?>" aria-hidden="true"></i>
+                        <?php $this->render_icon( $label_icon ); ?>
                         <p class="em-empty-msg"><?php printf( esc_html__( 'Non hai ancora creato nessun %s.', 'open-events' ), strtolower( $label_singular ) ); ?></p>
                     </div>
                 <?php else: ?>
@@ -616,7 +642,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                                     <?php if ( $thumb_url ) : ?>
                                         <img src="<?php echo esc_url( $thumb_url ); ?>" alt="">
                                     <?php else : ?>
-                                        <i class="<?php echo esc_attr( $label_icon ); ?>" aria-hidden="true"></i>
+                                        <?php $this->render_icon( $label_icon ); ?>
                                     <?php endif; ?>
                                 </div>
                                 <div class="em-item-info">
@@ -1246,7 +1272,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                         <?php esc_html_e( 'Annulla', 'open-events' ); ?>
                     </a>
                     <button type="submit" class="em-submit-btn">
-                        <i class="eicon-save" aria-hidden="true"></i> <?php echo 'edit' === $current_action ? esc_html__( 'Salva Modifiche', 'open-events' ) : esc_html__( 'Invia Evento per Revisione', 'open-events' ); ?>
+                        <?php $this->render_icon( 'save' ); ?> <?php echo 'edit' === $current_action ? esc_html__( 'Salva Modifiche', 'open-events' ) : esc_html__( 'Invia Evento per Revisione', 'open-events' ); ?>
                     </button>
                 </div>
             </form>
