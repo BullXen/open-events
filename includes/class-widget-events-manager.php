@@ -583,12 +583,25 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
 
         // Handle list view
         if ( 'list' === $current_action ) {
+            // The Events Calendar (e altri plugin eventi) intercettano le query
+            // su tribe_events via pre_get_posts e forzano post_status a 'publish',
+            // sovrascrivendo quanto passato sotto. Riaffermiamo qui con priorità
+            // molto alta cosi' vinciamo sempre come ultima parola prima della SQL.
+            add_action( 'pre_get_posts', function ( $query ) use ( $post_type, $current_user_id ) {
+                if ( 'open_events_my_list' === $query->get( 'open_events_query' ) ) {
+                    $query->set( 'post_status', [ 'publish', 'draft', 'pending' ] );
+                    $query->set( 'perm', 'readable' );
+                    $query->set( 'author', $current_user_id );
+                }
+            }, 999 );
+
             $user_posts = get_posts([
-                'post_type'      => $post_type,
-                'post_status'    => [ 'publish', 'draft', 'pending' ],
-                'author'         => $current_user_id,
-                'posts_per_page' => -1,
-                'perm'           => 'readable',
+                'post_type'         => $post_type,
+                'post_status'       => [ 'publish', 'draft', 'pending' ],
+                'author'            => $current_user_id,
+                'posts_per_page'    => -1,
+                'perm'              => 'readable',
+                'open_events_query' => 'open_events_my_list',
             ]);
             ?>
             <div class="em-form-container em-dashboard-view">
