@@ -705,8 +705,18 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                                             <?php echo esc_html( $meta_line ); ?>
                                             <?php if ( $is_admin_view ) :
                                                 $post_author_data = get_userdata( $p->post_author );
+                                                $author_name = $post_author_data ? $post_author_data->display_name : esc_html__( 'Sconosciuto', 'open-events' );
+
+                                                $author_suffix = $post_author_data ? '@' . $post_author_data->user_login : '—';
+                                                if ( 'tribe_events' === $post_type ) {
+                                                    $organizer_id = get_post_meta( $p->ID, '_EventOrganizerID', true );
+                                                    $organizer_title = $organizer_id ? get_the_title( $organizer_id ) : '';
+                                                    if ( $organizer_title ) {
+                                                        $author_suffix = $organizer_title;
+                                                    }
+                                                }
                                                 ?>
-                                                <?php echo $meta_line ? ' · ' : ''; ?><?php printf( esc_html__( 'di %1$s (%2$s)', 'open-events' ), esc_html( $post_author_data ? $post_author_data->display_name : esc_html__( 'Sconosciuto', 'open-events' ) ), esc_html( $post_author_data ? '@' . $post_author_data->user_login : '—' ) ); ?>
+                                                <?php echo $meta_line ? ' · ' : ''; ?><?php printf( esc_html__( 'di %1$s (%2$s)', 'open-events' ), esc_html( $author_name ), esc_html( $author_suffix ) ); ?>
                                             <?php endif; ?>
                                         </span>
                                     <?php endif; ?>
