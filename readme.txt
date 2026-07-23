@@ -27,6 +27,7 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * Nuovo: opzioni "Testo In Primo Piano" e "Limite eventi in primo piano" nella pagina Impostazioni (Open Events), con conteggio degli eventi attualmente in primo piano e blocco del salvataggio se il limite viene superato.
 * Nuovo: pulsante "Anteprima" nell'elenco eventi/luoghi/organizzatori, apre l'elemento in una nuova scheda (usa l'anteprima nativa di WordPress per bozze/in attesa di revisione).
 * Nuovo: nell'elenco, per gli admin, è ora visibile anche lo username (oltre al nome visualizzato) di chi ha inserito l'evento.
+* Nuovo: gli eventi "in primo piano" ora vengono portati in cima anche nel calendario pubblico del sito (non solo nella dashboard del portale), mantenendo l'ordinamento per data di The Events Calendar per tutti gli altri eventi.
 
 = 1.0.6 =
 * Fix: confermato bug persistente su "I Miei Eventi" nonostante 1.0.5 (priorità pre_get_posts non bastava, probabile filtro SQL diretto di un altro plugin). Query della lista ora bypassa completamente WP_Query/WordPress hooks con lettura diretta al database, nessun plugin terzo può più interferire.

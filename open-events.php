@@ -23,6 +23,39 @@ define( 'OPEN_EVENTS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/admin-settings.php';
 
 /**
+ * Porta in cima gli eventi "in primo piano" (_tribe_featured) anche nel
+ * calendario pubblico di The Events Calendar, non solo nella dashboard
+ * del portale. Aggiunge un LEFT JOIN + un criterio di ordinamento in
+ * testa a quello già presente (non lo sostituisce), cosi' l'ordinamento
+ * per data che usa TEC internamente resta intatto per gli eventi non
+ * in primo piano. Agganciato a posts_clauses (non pre_get_posts) perché
+ * altri filtri di TEC intervengono a quel livello e $query->set() da solo
+ * non basta a garantire la precedenza.
+ */
+function open_events_pin_featured_events_clauses( $clauses, $query ) {
+	if ( is_admin() || ! $query->is_main_query() ) {
+		return $clauses;
+	}
+
+	$is_event_query = function_exists( 'tribe_is_event_query' )
+		? tribe_is_event_query( $query )
+		: ( 'tribe_events' === $query->get( 'post_type' ) );
+
+	if ( ! $is_event_query ) {
+		return $clauses;
+	}
+
+	global $wpdb;
+	$clauses['join'] .= " LEFT JOIN {$wpdb->postmeta} AS oe_featured_meta ON ( {$wpdb->posts}.ID = oe_featured_meta.post_id AND oe_featured_meta.meta_key = '_tribe_featured' )";
+
+	$featured_order = "(oe_featured_meta.meta_value = '1') DESC";
+	$clauses['orderby'] = $clauses['orderby'] ? $featured_order . ', ' . $clauses['orderby'] : $featured_order;
+
+	return $clauses;
+}
+add_filter( 'posts_clauses', 'open_events_pin_featured_events_clauses', 100, 2 );
+
+/**
  * Verifica che Elementor sia attivo prima di caricare il widget.
  * Senza Elementor la classe Widget_Base non esiste e il sito andrebbe in errore fatale.
  */
