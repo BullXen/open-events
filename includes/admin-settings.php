@@ -131,7 +131,13 @@ function open_events_force_post_status( $post_id, $new_status ) {
 	}
 
 	$old_status = $post->post_status;
-	$wpdb->update( $wpdb->posts, [ 'post_status' => $new_status ], [ 'ID' => $post_id ] );
+	$data = [ 'post_status' => $new_status ];
+
+	if ( 'publish' === $new_status && empty( $post->post_name ) ) {
+		$data['post_name'] = wp_unique_post_slug( sanitize_title( $post->post_title ), $post_id, $new_status, $post->post_type, $post->post_parent );
+	}
+
+	$wpdb->update( $wpdb->posts, $data, [ 'ID' => $post_id ] );
 	clean_post_cache( $post_id );
 
 	$updated_post = get_post( $post_id );

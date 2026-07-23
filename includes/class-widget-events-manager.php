@@ -356,6 +356,13 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     echo '<script type="text/javascript">window.location.href = "' . esc_url_raw( $redirect_back ) . '";</script>';
                     return;
                 } elseif ( 'publish' === $_GET['em_action'] && wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'em_publish_' . $target_id ) ) {
+                    if ( empty( $target_post->post_name ) ) {
+                        // Un post inserito come "in attesa" può non avere mai avuto uno
+                        // slug/permalink generato: senza, l'URL pubblico dell'evento
+                        // risulta rotto (404) anche a stato correttamente "publish".
+                        $new_slug = wp_unique_post_slug( sanitize_title( $target_post->post_title ), $target_id, 'publish', $target_post->post_type, $target_post->post_parent );
+                        wp_update_post( [ 'ID' => $target_id, 'post_name' => $new_slug ] );
+                    }
                     wp_update_post( [ 'ID' => $target_id, 'post_status' => 'publish' ] );
                     if ( 'publish' !== get_post_status( $target_id ) ) {
                         // Alcuni CPT (es. tribe_events di The Events Calendar) mappano le
@@ -696,18 +703,19 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                             } else {
                                 $meta_line = get_post_meta( $p->ID, '_OrganizerEmail', true );
                             }
+                            $item_edit_url = add_query_arg( 'edit_id', $p->ID );
                             ?>
                             <div class="em-item-row">
-                                <div class="em-item-thumb">
+                                <a href="<?php echo esc_url( $item_edit_url ); ?>" class="em-item-thumb">
                                     <?php if ( $thumb_url ) : ?>
                                         <img src="<?php echo esc_url( $thumb_url ); ?>" alt="">
                                     <?php else : ?>
                                         <?php $this->render_icon( $label_icon ); ?>
                                     <?php endif; ?>
-                                </div>
+                                </a>
                                 <div class="em-item-info">
                                     <strong class="em-item-title">
-                                        <?php echo esc_html( $p->post_title ); ?>
+                                        <a href="<?php echo esc_url( $item_edit_url ); ?>" class="em-item-title-link"><?php echo esc_html( $p->post_title ); ?></a>
                                         <?php if ( 'tribe_events' === $post_type && '1' === get_post_meta( $p->ID, '_tribe_featured', true ) ) : ?>
                                             <span class="em-featured-badge"><?php $this->render_icon( 'star' ); ?> <?php echo esc_html( open_events_get_featured_label() ); ?></span>
                                         <?php endif; ?>
@@ -720,40 +728,42 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                                                 $author_name = $post_author_data ? $post_author_data->display_name : esc_html__( 'Sconosciuto', 'open-events' );
 
                                                 $published_by_mode = open_events_get_published_by_display();
-                                                $author_suffix = $post_author_data ? '@' . $post_author_data->user_login : '—';
-
-                                                if ( 'email' === $published_by_mode ) {
-                                                    $author_suffix = $post_author_data ? $post_author_data->user_email : '—';
-                                                } elseif ( 'organizer' === $published_by_mode && 'tribe_events' === $post_type ) {
-                                                    $organizer_id = get_post_meta( $p->ID, '_EventOrganizerID', true );
-                                                    $organizer_title = $organizer_id ? get_the_title( $organizer_id ) : '';
-                                                    if ( $organizer_title ) {
-                                                        $author_suffix = $organizer_title;
-                                                    }
-                                                }
+                                                $organizer_id = ( 'tribe_events' === $post_type ) ? get_post_meta( $p->ID, '_EventOrganizerID', true ) : '';
+                                                $organizer_title = $organizer_id ? get_the_title( $organizer_id ) : '';
                                                 ?>
-                                                <?php echo $meta_line ? ' · ' : ''; ?><?php printf( esc_html__( 'di %1$s (%2$s)', 'open-events' ), esc_html( $author_name ), esc_html( $author_suffix ) ); ?>
+                                                <?php echo $meta_line ? ' · ' : ''; ?>
+                                                <?php if ( 'organizer' === $published_by_mode && $organizer_title ) :
+                                                    $organizer_edit_url = add_query_arg( [ 'view' => 'tribe_organizer', 'edit_id' => $organizer_id ], remove_query_arg( [ 'edit_id', 'action', 'type' ] ) );
+                                                    ?>
+                                                    <a href="<?php echo esc_url( $organizer_edit_url ); ?>" class="em-organizer-link"><?php echo esc_html( $organizer_title ); ?></a>
+                                                <?php else :
+                                                    $author_suffix = $post_author_data ? '@' . $post_author_data->user_login : '—';
+                                                    if ( 'email' === $published_by_mode ) {
+                                                        $author_suffix = $post_author_data ? $post_author_data->user_email : '—';
+                                                    }
+                                                    printf( esc_html__( 'di %1$s (%2$s)', 'open-events' ), esc_html( $author_name ), esc_html( $author_suffix ) );
+                                                endif; ?>
                                             <?php endif; ?>
                                         </span>
                                     <?php endif; ?>
                                 </div>
-                                <span class="em-status-badge <?php echo esc_attr( $p->post_status ); ?>"><?php echo esc_html( get_post_status_object( $p->post_status )->label ); ?></span>
-                                <a href="<?php echo esc_url( add_query_arg( 'edit_id', $p->ID ) ); ?>" class="em-action-btn edit-btn" title="<?php esc_attr_e( 'Modifica', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Modifica', 'open-events' ); ?>">
-                                    <?php $this->render_icon( 'edit' ); ?>
-                                </a>
                                 <a href="<?php echo esc_url( 'publish' === $p->post_status ? get_permalink( $p->ID ) : get_preview_post_link( $p ) ); ?>" class="em-action-btn preview-btn" target="_blank" rel="noopener noreferrer" title="<?php esc_attr_e( 'Anteprima', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Anteprima', 'open-events' ); ?>">
                                     <?php $this->render_icon( 'eye' ); ?>
                                 </a>
+                                <?php if ( $is_admin_view && 'publish' !== $p->post_status ) : ?>
+                                    <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'em_action' => 'publish', 'post_id' => $p->ID ] ), 'em_publish_' . $p->ID ) ); ?>" class="em-action-btn publish-btn" onclick="return confirm('<?php echo esc_js( __( 'Pubblicare questo elemento online?', 'open-events' ) ); ?>');" title="<?php esc_attr_e( 'Pubblica', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Pubblica', 'open-events' ); ?>">
+                                        <?php $this->render_icon( 'check' ); ?>
+                                    </a>
+                                <?php endif; ?>
+                                <span class="em-status-badge <?php echo esc_attr( $p->post_status ); ?>"><?php echo esc_html( get_post_status_object( $p->post_status )->label ); ?></span>
                                 <?php if ( $is_admin_view ) : ?>
-                                    <?php if ( 'publish' !== $p->post_status ) : ?>
-                                        <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'em_action' => 'publish', 'post_id' => $p->ID ] ), 'em_publish_' . $p->ID ) ); ?>" class="em-action-btn publish-btn" onclick="return confirm('<?php echo esc_js( __( 'Pubblicare questo elemento online?', 'open-events' ) ); ?>');" title="<?php esc_attr_e( 'Pubblica', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Pubblica', 'open-events' ); ?>">
-                                            <?php $this->render_icon( 'check' ); ?>
-                                        </a>
-                                    <?php endif; ?>
                                     <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'em_action' => 'delete', 'post_id' => $p->ID ] ), 'em_delete_' . $p->ID ) ); ?>" class="em-action-btn delete-btn" onclick="return confirm('<?php echo esc_js( __( 'Eliminare questo elemento? Verrà spostato nel cestino.', 'open-events' ) ); ?>');" title="<?php esc_attr_e( 'Elimina', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Elimina', 'open-events' ); ?>">
                                         <?php $this->render_icon( 'trash' ); ?>
                                     </a>
                                 <?php endif; ?>
+                                <a href="<?php echo esc_url( $item_edit_url ); ?>" class="em-action-btn edit-btn" title="<?php esc_attr_e( 'Modifica', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Modifica', 'open-events' ); ?>">
+                                    <?php $this->render_icon( 'edit' ); ?>
+                                </a>
                             </div>
                         <?php endforeach; ?>
                     </div>
