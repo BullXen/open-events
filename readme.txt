@@ -4,7 +4,7 @@ Tags: events, elementor, the-events-calendar, front-end submission
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.6
+Stable tag: 1.0.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,11 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * I nuovi eventi vengono salvati come "in attesa di revisione" (pending) cosi' un amministratore puo' approvarli prima della pubblicazione; luoghi e organizzatori restano in bozza.
 
 == Changelog ==
+
+= 1.0.7 =
+* Nuovo: gli amministratori possono ora vedere, modificare, pubblicare ed eliminare (cestino) eventi, luoghi e organizzatori di **tutti** gli utenti dal portale front-end, non solo i propri; l'autore è indicato in elenco. Modificare un elemento come admin non ne resetta più lo stato a "in attesa di revisione".
+* Nuovo: toggle "Evento in Primo Piano" (solo per admin, nel form evento) — gli eventi contrassegnati restano sempre in cima all'elenco "I Miei Eventi", con etichetta ★ personalizzabile.
+* Nuovo: opzioni "Testo In Primo Piano" e "Limite eventi in primo piano" nella pagina Impostazioni (Open Events), con conteggio degli eventi attualmente in primo piano e blocco del salvataggio se il limite viene superato.
 
 = 1.0.6 =
 * Fix: confermato bug persistente su "I Miei Eventi" nonostante 1.0.5 (priorità pre_get_posts non bastava, probabile filtro SQL diretto di un altro plugin). Query della lista ora bypassa completamente WP_Query/WordPress hooks con lettura diretta al database, nessun plugin terzo può più interferire.
