@@ -812,6 +812,14 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             $title = isset( $_POST['post_title'] ) ? sanitize_text_field( $_POST['post_title'] ) : '';
             $content = isset( $_POST['post_content'] ) ? wp_kses_post( $_POST['post_content'] ) : '';
 
+            $assign_to_user_id = 0;
+            if ( $is_admin_view && in_array( $post_type, [ 'tribe_venue', 'tribe_organizer' ], true ) && ! empty( $_POST['assign_to_user'] ) ) {
+                $candidate_user_id = intval( $_POST['assign_to_user'] );
+                if ( get_userdata( $candidate_user_id ) ) {
+                    $assign_to_user_id = $candidate_user_id;
+                }
+            }
+
             $featured_limit = open_events_get_featured_limit();
             $wants_featured = $is_admin_view && 'tribe_events' === $post_type && isset( $_POST['is_featured'] );
             $featured_limit_hit = false;
@@ -840,10 +848,13 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                         // modificare un elemento senza fargli perdere lo stato pubblicato.
                         $post_data['post_status'] = ( 'tribe_events' === $post_type ) ? open_events_get_default_event_status() : 'draft';
                     }
+                    if ( $assign_to_user_id ) {
+                        $post_data['post_author'] = $assign_to_user_id;
+                    }
                     $post_id = wp_update_post( $post_data, true );
                 } else {
                     $post_data['post_status'] = ( 'tribe_events' === $post_type ) ? open_events_get_default_event_status() : 'draft';
-                    $post_data['post_author'] = $current_user_id;
+                    $post_data['post_author'] = $assign_to_user_id ? $assign_to_user_id : $current_user_id;
                     $post_id = wp_insert_post( $post_data, true );
                 }
 
@@ -1039,9 +1050,13 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             </div>
 
             <h2 class="em-section-title">
-                <?php echo 'edit' === $current_action ? esc_html__( 'Modifica Evento / Contenuto', 'open-events' ) : esc_html__( 'Inserisci Nuovo Evento', 'open-events' ); ?>
+                <?php
+                echo 'edit' === $current_action
+                    ? sprintf( esc_html__( 'Modifica %s', 'open-events' ), $label_singular )
+                    : sprintf( esc_html__( 'Inserisci Nuovo %s', 'open-events' ), $label_singular );
+                ?>
             </h2>
-            <p class="em-section-subtitle"><?php esc_html_e( 'Compila tutti i dettagli relativi al tuo evento per pubblicarlo sul portale.', 'open-events' ); ?></p>
+            <p class="em-section-subtitle"><?php printf( esc_html__( 'Compila tutti i dettagli relativi al tuo %s per pubblicarlo sul portale.', 'open-events' ), esc_html( strtolower( $label_singular ) ) ); ?></p>
 
             <?php if ( $success_msg ): ?>
                 <div class="em-alert success"><?php echo esc_html( $success_msg ); ?></div>
@@ -1412,6 +1427,27 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                         <div class="em-form-group">
                             <label><?php esc_html_e( 'CAP', 'open-events' ); ?></label>
                             <input type="text" name="_VenueZip" value="<?php echo esc_attr( $edit_post ? get_post_meta( $edit_post->ID, '_VenueZip', true ) : '' ); ?>">
+                        </div>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ( $is_admin_view && in_array( $post_type, [ 'tribe_venue', 'tribe_organizer' ], true ) ):
+                    $assign_users = get_users( [ 'orderby' => 'display_name', 'order' => 'ASC' ] );
+                    $current_assigned_id = $edit_post ? intval( $edit_post->post_author ) : 0;
+                    ?>
+                    <div class="em-form-section">
+                        <h3 class="em-form-section-title"><?php esc_html_e( 'Assegnazione (Admin)', 'open-events' ); ?></h3>
+                        <div class="em-form-group">
+                            <label for="em_assign_to_user"><?php esc_html_e( 'Assegna a', 'open-events' ); ?></label>
+                            <select name="assign_to_user" id="em_assign_to_user" class="em-form-select">
+                                <option value=""><?php esc_html_e( '-- Amministratore (predefinito) --', 'open-events' ); ?></option>
+                                <?php foreach ( $assign_users as $u ): ?>
+                                    <option value="<?php echo esc_attr( $u->ID ); ?>" <?php selected( $current_assigned_id, $u->ID ); ?>>
+                                        <?php echo esc_html( $u->display_name . ' (@' . $u->user_login . ')' ); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <small class="em-field-help"><?php esc_html_e( 'Se lasci vuoto resta assegnato al tuo account admin. Altrimenti scegli a quale utente assegnare questo elemento.', 'open-events' ); ?></small>
                         </div>
                     </div>
                 <?php endif; ?>

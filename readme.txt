@@ -32,6 +32,8 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * Nuovo: opzione "Visualizzazione 'pubblicato da'" in Impostazioni — scegli se accanto al nome di chi ha inserito l'evento mostrare il Nome Organizzatore collegato, lo Username o l'Email.
 * Fix: cliccando "Pubblica" su un evento inserito da un utente, in alcuni casi l'evento restava invisibile (né in anteprima né online) perché non aveva mai ricevuto uno slug/permalink essendo stato salvato inizialmente come "in attesa di revisione"; ora lo slug viene generato al momento della pubblicazione se mancante.
 * Miglioramento: nell'elenco, immagine e titolo aprono la scheda di modifica; l'icona Modifica è ora l'ultima a destra, Anteprima e Pubblica precedono lo stato; se la visualizzazione "pubblicato da" è impostata su Organizzatore, viene mostrato solo il nome dell'organizzatore (cliccabile, apre la sua scheda) invece di "di autore (organizzatore)".
+* Fix: il titolo del form "Nuovo Luogo" e "Nuovo Organizzatore" mostrava erroneamente "Inserisci Nuovo Evento".
+* Nuovo: nel form Luogo/Organizzatore, campo admin "Assegna a" in fondo pagina — se lasciato vuoto l'elemento resta assegnato all'account admin, altrimenti si può scegliere a quale utente assegnarlo (anche in modifica, per riassegnare elementi esistenti).
 
 = 1.0.6 =
 * Fix: confermato bug persistente su "I Miei Eventi" nonostante 1.0.5 (priorità pre_get_posts non bastava, probabile filtro SQL diretto di un altro plugin). Query della lista ora bypassa completamente WP_Query/WordPress hooks con lettura diretta al database, nessun plugin terzo può più interferire.
