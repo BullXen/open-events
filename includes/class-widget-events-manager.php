@@ -347,12 +347,24 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             $target_post = get_post( $target_id );
             if ( $target_post && $target_post->post_type === $post_type ) {
                 $redirect_back = remove_query_arg( [ 'em_action', 'post_id', '_wpnonce' ] );
+
                 if ( 'delete' === $_GET['em_action'] && wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'em_delete_' . $target_id ) ) {
                     wp_trash_post( $target_id );
+                    if ( 'trash' !== get_post_status( $target_id ) ) {
+                        open_events_force_post_status( $target_id, 'trash' );
+                    }
                     echo '<script type="text/javascript">window.location.href = "' . esc_url_raw( $redirect_back ) . '";</script>';
                     return;
                 } elseif ( 'publish' === $_GET['em_action'] && wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'em_publish_' . $target_id ) ) {
                     wp_update_post( [ 'ID' => $target_id, 'post_status' => 'publish' ] );
+                    if ( 'publish' !== get_post_status( $target_id ) ) {
+                        // Alcuni CPT (es. tribe_events di The Events Calendar) mappano le
+                        // capability di pubblicazione in modo non standard e possono far
+                        // fallire wp_update_post() in silenzio anche per un amministratore
+                        // già verificato sopra tramite $is_admin_view. Scrittura diretta +
+                        // hook di transizione rilanciati a mano cosi' TEC resta sincronizzato.
+                        open_events_force_post_status( $target_id, 'publish' );
+                    }
                     echo '<script type="text/javascript">window.location.href = "' . esc_url_raw( $redirect_back ) . '";</script>';
                     return;
                 }

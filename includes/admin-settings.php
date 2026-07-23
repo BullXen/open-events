@@ -114,6 +114,32 @@ function open_events_count_featured_events( $exclude_id = 0 ) {
 	return (int) $wpdb->get_var( $sql );
 }
 
+/**
+ * Forza lo status di un post via query diretta, per i casi in cui
+ * wp_update_post()/wp_trash_post() falliscono in silenzio (es. capability
+ * di pubblicazione mappate in modo non standard da un CPT di terze parti
+ * come tribe_events). Rilancia comunque gli hook di transizione standard
+ * cosi' plugin come The Events Calendar possono aggiornare la propria
+ * cache/indice interno.
+ */
+function open_events_force_post_status( $post_id, $new_status ) {
+	global $wpdb;
+
+	$post = get_post( $post_id );
+	if ( ! $post ) {
+		return;
+	}
+
+	$old_status = $post->post_status;
+	$wpdb->update( $wpdb->posts, [ 'post_status' => $new_status ], [ 'ID' => $post_id ] );
+	clean_post_cache( $post_id );
+
+	$updated_post = get_post( $post_id );
+	wp_transition_post_status( $new_status, $old_status, $updated_post );
+	do_action( 'save_post', $post_id, $updated_post, true );
+	do_action( 'save_post_' . $updated_post->post_type, $post_id, $updated_post, true );
+}
+
 function open_events_parse_cities_input( $raw ) {
 	$lines  = preg_split( '/[\r\n]+/', (string) $raw );
 	$cities = [];
