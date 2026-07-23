@@ -212,6 +212,10 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             'save'     => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
             'upload'   => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
             'star'     => '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+            'edit'     => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>',
+            'eye'      => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+            'check'    => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+            'trash'    => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
         ];
 
         return $icons[ $key ] ?? '';
@@ -708,20 +712,20 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                                     <?php endif; ?>
                                 </div>
                                 <span class="em-status-badge <?php echo esc_attr( $p->post_status ); ?>"><?php echo esc_html( get_post_status_object( $p->post_status )->label ); ?></span>
-                                <a href="<?php echo esc_url( add_query_arg( 'edit_id', $p->ID ) ); ?>" class="em-action-btn edit-btn">
-                                    <?php esc_html_e( 'Modifica', 'open-events' ); ?>
+                                <a href="<?php echo esc_url( add_query_arg( 'edit_id', $p->ID ) ); ?>" class="em-action-btn edit-btn" title="<?php esc_attr_e( 'Modifica', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Modifica', 'open-events' ); ?>">
+                                    <?php $this->render_icon( 'edit' ); ?>
                                 </a>
-                                <a href="<?php echo esc_url( 'publish' === $p->post_status ? get_permalink( $p->ID ) : get_preview_post_link( $p ) ); ?>" class="em-action-btn preview-btn" target="_blank" rel="noopener noreferrer">
-                                    <?php esc_html_e( 'Anteprima', 'open-events' ); ?>
+                                <a href="<?php echo esc_url( 'publish' === $p->post_status ? get_permalink( $p->ID ) : get_preview_post_link( $p ) ); ?>" class="em-action-btn preview-btn" target="_blank" rel="noopener noreferrer" title="<?php esc_attr_e( 'Anteprima', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Anteprima', 'open-events' ); ?>">
+                                    <?php $this->render_icon( 'eye' ); ?>
                                 </a>
                                 <?php if ( $is_admin_view ) : ?>
                                     <?php if ( 'publish' !== $p->post_status ) : ?>
-                                        <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'em_action' => 'publish', 'post_id' => $p->ID ] ), 'em_publish_' . $p->ID ) ); ?>" class="em-action-btn publish-btn" onclick="return confirm('<?php echo esc_js( __( 'Pubblicare questo elemento online?', 'open-events' ) ); ?>');">
-                                            <?php esc_html_e( 'Pubblica', 'open-events' ); ?>
+                                        <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'em_action' => 'publish', 'post_id' => $p->ID ] ), 'em_publish_' . $p->ID ) ); ?>" class="em-action-btn publish-btn" onclick="return confirm('<?php echo esc_js( __( 'Pubblicare questo elemento online?', 'open-events' ) ); ?>');" title="<?php esc_attr_e( 'Pubblica', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Pubblica', 'open-events' ); ?>">
+                                            <?php $this->render_icon( 'check' ); ?>
                                         </a>
                                     <?php endif; ?>
-                                    <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'em_action' => 'delete', 'post_id' => $p->ID ] ), 'em_delete_' . $p->ID ) ); ?>" class="em-action-btn delete-btn" onclick="return confirm('<?php echo esc_js( __( 'Eliminare questo elemento? Verrà spostato nel cestino.', 'open-events' ) ); ?>');">
-                                        <?php esc_html_e( 'Elimina', 'open-events' ); ?>
+                                    <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'em_action' => 'delete', 'post_id' => $p->ID ] ), 'em_delete_' . $p->ID ) ); ?>" class="em-action-btn delete-btn" onclick="return confirm('<?php echo esc_js( __( 'Eliminare questo elemento? Verrà spostato nel cestino.', 'open-events' ) ); ?>');" title="<?php esc_attr_e( 'Elimina', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Elimina', 'open-events' ); ?>">
+                                        <?php $this->render_icon( 'trash' ); ?>
                                     </a>
                                 <?php endif; ?>
                             </div>

@@ -740,15 +740,24 @@ p.em-section-subtitle {
     background-color: #dc2626;
 }
 
+/* Pulsanti azione icon-only nelle righe elenco: righe più pulite e compatte */
+.em-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.em-action-btn .em-icon {
+    font-size: 15px;
+}
 .em-action-btn.edit-btn {
     background: #f0f9ff;
     color: #0284c7;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-    text-decoration: none;
-    font-size: 13px;
-    transition: all 0.2s;
 }
 .em-action-btn.edit-btn:hover {
     background: #0284c7;
@@ -757,12 +766,6 @@ p.em-section-subtitle {
 .em-action-btn.preview-btn {
     background: #f1f5f9;
     color: #475569;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-    text-decoration: none;
-    font-size: 13px;
-    transition: all 0.2s;
 }
 .em-action-btn.preview-btn:hover {
     background: #475569;
@@ -771,12 +774,6 @@ p.em-section-subtitle {
 .em-action-btn.publish-btn {
     background: #d1fae5;
     color: #065f46;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-    text-decoration: none;
-    font-size: 13px;
-    transition: all 0.2s;
 }
 .em-action-btn.publish-btn:hover {
     background: #059669;
@@ -785,12 +782,6 @@ p.em-section-subtitle {
 .em-action-btn.delete-btn {
     background: #fee2e2;
     color: #b91c1c;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-    text-decoration: none;
-    font-size: 13px;
-    transition: all 0.2s;
 }
 .em-action-btn.delete-btn:hover {
     background: #dc2626;
