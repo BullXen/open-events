@@ -5,6 +5,8 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 const DEFAULT_EVENT_STATUS_OPTION = 'open_events_default_event_status';
 const DESCRIPTION_EDITOR_OPTION   = 'open_events_description_editor';
 const AVAILABLE_CITIES_OPTION     = 'open_events_available_cities';
+const FEATURED_LABEL_OPTION       = 'open_events_featured_label';
+const FEATURED_LIMIT_OPTION       = 'open_events_featured_limit';
 
 /**
  * Trova la posizione del menu "Eventi" (tribe_events) cosi' da inserire
@@ -71,6 +73,39 @@ function open_events_get_available_cities() {
 	return is_array( $cities ) ? $cities : [];
 }
 
+function open_events_get_featured_label() {
+	$label = get_option( FEATURED_LABEL_OPTION, '' );
+	$label = is_string( $label ) ? trim( $label ) : '';
+
+	return '' !== $label ? $label : esc_html__( 'In Primo Piano', 'open-events' );
+}
+
+function open_events_get_featured_limit() {
+	$limit = absint( get_option( FEATURED_LIMIT_OPTION, 3 ) );
+
+	return $limit;
+}
+
+/**
+ * Conta gli eventi attualmente in primo piano, escludendo opzionalmente
+ * un post (usato in fase di salvataggio per non contare l'evento che si
+ * sta proprio modificando).
+ */
+function open_events_count_featured_events( $exclude_id = 0 ) {
+	global $wpdb;
+
+	$sql = "SELECT COUNT(*) FROM {$wpdb->postmeta} pm
+		INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+		WHERE pm.meta_key = '_tribe_featured' AND pm.meta_value = '1'
+		AND p.post_type = 'tribe_events' AND p.post_status != 'trash'";
+
+	if ( $exclude_id ) {
+		$sql .= $wpdb->prepare( ' AND p.ID != %d', $exclude_id );
+	}
+
+	return (int) $wpdb->get_var( $sql );
+}
+
 function open_events_parse_cities_input( $raw ) {
 	$lines  = preg_split( '/[\r\n]+/', (string) $raw );
 	$cities = [];
@@ -112,11 +147,21 @@ function open_events_render_settings_page() {
 		$cities = open_events_parse_cities_input( wp_unslash( $_POST['available_cities'] ?? '' ) );
 		update_option( AVAILABLE_CITIES_OPTION, $cities );
 		$saved = true;
+
+		$featured_label = sanitize_text_field( wp_unslash( $_POST['featured_label'] ?? '' ) );
+		update_option( FEATURED_LABEL_OPTION, $featured_label );
+
+		$featured_limit = absint( wp_unslash( $_POST['featured_limit'] ?? 0 ) );
+		update_option( FEATURED_LIMIT_OPTION, $featured_limit );
+		$saved = true;
 	}
 
 	$current_status = open_events_get_default_event_status();
 	$current_editor_mode = open_events_get_description_editor_mode();
 	$current_cities = open_events_get_available_cities();
+	$current_featured_label = open_events_get_featured_label();
+	$current_featured_limit = open_events_get_featured_limit();
+	$current_featured_count = open_events_count_featured_events();
 	?>
 	<div class="wrap">
 		<h1><?php esc_html_e( 'Open Events - Impostazioni', 'open-events' ); ?></h1>
@@ -185,6 +230,27 @@ function open_events_render_settings_page() {
 						<textarea name="available_cities" id="open_events_available_cities" rows="8" class="large-text" placeholder="<?php esc_attr_e( "Iseo\nSulzano\nMonte Isola\n...", 'open-events' ); ?>"><?php echo esc_textarea( implode( "\n", $current_cities ) ); ?></textarea>
 						<p class="description">
 							<?php esc_html_e( 'Una città per riga. Se presenti, gli utenti potranno scegliere la città del luogo da questa lista (invece di scriverla liberamente) quando inseriscono un evento o un luogo.', 'open-events' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="open_events_featured_label"><?php esc_html_e( 'Testo In Primo Piano', 'open-events' ); ?></label></th>
+					<td>
+						<input type="text" name="featured_label" id="open_events_featured_label" class="regular-text" value="<?php echo esc_attr( $current_featured_label ); ?>" placeholder="<?php esc_attr_e( 'In Primo Piano', 'open-events' ); ?>">
+						<p class="description">
+							<?php esc_html_e( 'Etichetta mostrata accanto agli eventi contrassegnati come "in primo piano" nell\'elenco eventi.', 'open-events' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="open_events_featured_limit"><?php esc_html_e( 'Limite eventi in primo piano', 'open-events' ); ?></label></th>
+					<td>
+						<input type="number" name="featured_limit" id="open_events_featured_limit" class="small-text" min="0" step="1" value="<?php echo esc_attr( $current_featured_limit ); ?>">
+						<p class="description">
+							<?php printf(
+								esc_html__( 'Numero massimo di eventi che possono essere messi in primo piano contemporaneamente. Usa 0 per nessun limite. Attualmente in primo piano: %d.', 'open-events' ),
+								intval( $current_featured_count )
+							); ?>
 						</p>
 					</td>
 				</tr>

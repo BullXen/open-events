@@ -211,6 +211,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             'link'     => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>',
             'save'     => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
             'upload'   => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+            'star'     => '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
         ];
 
         return $icons[ $key ] ?? '';
@@ -323,31 +324,50 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
         $redirect = $settings['redirect_url'];
         $current_user = wp_get_current_user();
         $current_user_id = $current_user->ID;
+        $is_admin_view = current_user_can( 'manage_options' );
 
         // Resolve active post_type
         $post_type = '';
         if ( 'hub' === $action_mode ) {
             $post_type = isset( $_GET['view'] ) ? sanitize_text_field( $_GET['view'] ) : '';
             if ( ! in_array( $post_type, [ 'tribe_events', 'tribe_organizer', 'tribe_venue', 'profile' ] ) ) {
-                $post_type = ''; 
+                $post_type = '';
             }
         } else {
             $post_type = $settings['post_type_mode'];
         }
 
+        // Admin quick actions: pubblica / elimina (cestino) qualsiasi elemento del tipo corrente
+        if ( $is_admin_view && ! empty( $post_type ) && isset( $_GET['em_action'], $_GET['post_id'] ) ) {
+            $target_id = intval( $_GET['post_id'] );
+            $target_post = get_post( $target_id );
+            if ( $target_post && $target_post->post_type === $post_type ) {
+                $redirect_back = remove_query_arg( [ 'em_action', 'post_id', '_wpnonce' ] );
+                if ( 'delete' === $_GET['em_action'] && wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'em_delete_' . $target_id ) ) {
+                    wp_trash_post( $target_id );
+                    echo '<script type="text/javascript">window.location.href = "' . esc_url_raw( $redirect_back ) . '";</script>';
+                    return;
+                } elseif ( 'publish' === $_GET['em_action'] && wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'em_publish_' . $target_id ) ) {
+                    wp_update_post( [ 'ID' => $target_id, 'post_status' => 'publish' ] );
+                    echo '<script type="text/javascript">window.location.href = "' . esc_url_raw( $redirect_back ) . '";</script>';
+                    return;
+                }
+            }
+        }
+
         $post_type_labels = [
             'tribe_events'    => [
-                'plural'   => esc_html__( 'I Miei Eventi', 'open-events' ),
+                'plural'   => $is_admin_view ? esc_html__( 'Tutti gli Eventi', 'open-events' ) : esc_html__( 'I Miei Eventi', 'open-events' ),
                 'singular' => esc_html__( 'Evento', 'open-events' ),
                 'icon'     => 'calendar',
             ],
             'tribe_organizer' => [
-                'plural'   => esc_html__( 'I Miei Organizzatori', 'open-events' ),
+                'plural'   => $is_admin_view ? esc_html__( 'Tutti gli Organizzatori', 'open-events' ) : esc_html__( 'I Miei Organizzatori', 'open-events' ),
                 'singular' => esc_html__( 'Organizzatore', 'open-events' ),
                 'icon'     => 'person',
             ],
             'tribe_venue'     => [
-                'plural'   => esc_html__( 'I Miei Luoghi', 'open-events' ),
+                'plural'   => $is_admin_view ? esc_html__( 'Tutti i Luoghi', 'open-events' ) : esc_html__( 'I Miei Luoghi', 'open-events' ),
                 'singular' => esc_html__( 'Luogo', 'open-events' ),
                 'icon'     => 'map-pin',
             ],
@@ -591,11 +611,29 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             global $wpdb;
             $allowed_statuses = [ 'publish', 'draft', 'pending' ];
             $status_placeholders = implode( ', ', array_fill( 0, count( $allowed_statuses ), '%s' ) );
-            $sql = $wpdb->prepare(
-                "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_author = %d AND post_status IN ($status_placeholders) ORDER BY post_date DESC",
-                array_merge( [ $post_type, $current_user_id ], $allowed_statuses )
-            );
+            if ( $is_admin_view ) {
+                $sql = $wpdb->prepare(
+                    "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_status IN ($status_placeholders) ORDER BY post_date DESC",
+                    array_merge( [ $post_type ], $allowed_statuses )
+                );
+            } else {
+                $sql = $wpdb->prepare(
+                    "SELECT * FROM {$wpdb->posts} WHERE post_type = %s AND post_author = %d AND post_status IN ($status_placeholders) ORDER BY post_date DESC",
+                    array_merge( [ $post_type, $current_user_id ], $allowed_statuses )
+                );
+            }
             $user_posts = $wpdb->get_results( $sql );
+
+            if ( 'tribe_events' === $post_type ) {
+                usort( $user_posts, function( $a, $b ) {
+                    $a_featured = '1' === get_post_meta( $a->ID, '_tribe_featured', true ) ? 1 : 0;
+                    $b_featured = '1' === get_post_meta( $b->ID, '_tribe_featured', true ) ? 1 : 0;
+                    if ( $a_featured !== $b_featured ) {
+                        return $b_featured - $a_featured;
+                    }
+                    return strtotime( $b->post_date ) - strtotime( $a->post_date );
+                } );
+            }
             ?>
             <div class="em-form-container em-dashboard-view">
                 <?php if ( $show_sidebar ) : ?>
@@ -652,15 +690,37 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                                     <?php endif; ?>
                                 </div>
                                 <div class="em-item-info">
-                                    <strong class="em-item-title"><?php echo esc_html( $p->post_title ); ?></strong>
-                                    <?php if ( $meta_line ) : ?>
-                                        <span class="em-item-meta"><?php echo esc_html( $meta_line ); ?></span>
+                                    <strong class="em-item-title">
+                                        <?php echo esc_html( $p->post_title ); ?>
+                                        <?php if ( 'tribe_events' === $post_type && '1' === get_post_meta( $p->ID, '_tribe_featured', true ) ) : ?>
+                                            <span class="em-featured-badge"><?php $this->render_icon( 'star' ); ?> <?php echo esc_html( open_events_get_featured_label() ); ?></span>
+                                        <?php endif; ?>
+                                    </strong>
+                                    <?php if ( $meta_line || $is_admin_view ) : ?>
+                                        <span class="em-item-meta">
+                                            <?php echo esc_html( $meta_line ); ?>
+                                            <?php if ( $is_admin_view ) :
+                                                $post_author_data = get_userdata( $p->post_author );
+                                                ?>
+                                                <?php echo $meta_line ? ' · ' : ''; ?><?php printf( esc_html__( 'di %s', 'open-events' ), esc_html( $post_author_data ? $post_author_data->display_name : esc_html__( 'Sconosciuto', 'open-events' ) ) ); ?>
+                                            <?php endif; ?>
+                                        </span>
                                     <?php endif; ?>
                                 </div>
                                 <span class="em-status-badge <?php echo esc_attr( $p->post_status ); ?>"><?php echo esc_html( get_post_status_object( $p->post_status )->label ); ?></span>
                                 <a href="<?php echo esc_url( add_query_arg( 'edit_id', $p->ID ) ); ?>" class="em-action-btn edit-btn">
                                     <?php esc_html_e( 'Modifica', 'open-events' ); ?>
                                 </a>
+                                <?php if ( $is_admin_view ) : ?>
+                                    <?php if ( 'publish' !== $p->post_status ) : ?>
+                                        <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'em_action' => 'publish', 'post_id' => $p->ID ] ), 'em_publish_' . $p->ID ) ); ?>" class="em-action-btn publish-btn" onclick="return confirm('<?php echo esc_js( __( 'Pubblicare questo elemento online?', 'open-events' ) ); ?>');">
+                                            <?php esc_html_e( 'Pubblica', 'open-events' ); ?>
+                                        </a>
+                                    <?php endif; ?>
+                                    <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'em_action' => 'delete', 'post_id' => $p->ID ] ), 'em_delete_' . $p->ID ) ); ?>" class="em-action-btn delete-btn" onclick="return confirm('<?php echo esc_js( __( 'Eliminare questo elemento? Verrà spostato nel cestino.', 'open-events' ) ); ?>');">
+                                        <?php esc_html_e( 'Elimina', 'open-events' ); ?>
+                                    </a>
+                                <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -693,7 +753,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                 return;
             }
 
-            if ( intval( $edit_post->post_author ) !== $current_user_id ) {
+            if ( ! $is_admin_view && intval( $edit_post->post_author ) !== $current_user_id ) {
                 echo '<div class="em-alert error">' . esc_html__( 'Non hai i permessi per modificare questo elemento.', 'open-events' ) . '</div>';
                 if ( $show_sidebar ) {
                     echo '</div></div>';
@@ -709,20 +769,37 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             $title = isset( $_POST['post_title'] ) ? sanitize_text_field( $_POST['post_title'] ) : '';
             $content = isset( $_POST['post_content'] ) ? wp_kses_post( $_POST['post_content'] ) : '';
 
+            $featured_limit = open_events_get_featured_limit();
+            $wants_featured = $is_admin_view && 'tribe_events' === $post_type && isset( $_POST['is_featured'] );
+            $featured_limit_hit = false;
+            if ( $wants_featured && $featured_limit > 0 ) {
+                $already_featured = 'edit' === $current_action && $edit_post && '1' === get_post_meta( $edit_post_id, '_tribe_featured', true );
+                if ( ! $already_featured && open_events_count_featured_events( $edit_post_id ) >= $featured_limit ) {
+                    $featured_limit_hit = true;
+                }
+            }
+
             if ( empty( $title ) ) {
                 $error_msg = esc_html__( 'Il titolo/nome è obbligatorio.', 'open-events' );
+            } elseif ( $featured_limit_hit ) {
+                $error_msg = sprintf( esc_html__( 'Limite di eventi in primo piano raggiunto (massimo %d). Rimuovi il segno da un altro evento prima di aggiungerne uno nuovo.', 'open-events' ), $featured_limit );
             } else {
                 $post_data = [
                     'post_title'   => $title,
                     'post_content' => $content,
                     'post_type'    => $post_type,
-                    'post_status'  => ( 'tribe_events' === $post_type ) ? open_events_get_default_event_status() : 'draft',
                 ];
 
                 if ( 'edit' === $current_action ) {
                     $post_data['ID'] = $edit_post_id;
+                    if ( ! $is_admin_view ) {
+                        // Le modifiche di un utente normale tornano in revisione; l'admin può
+                        // modificare un elemento senza fargli perdere lo stato pubblicato.
+                        $post_data['post_status'] = ( 'tribe_events' === $post_type ) ? open_events_get_default_event_status() : 'draft';
+                    }
                     $post_id = wp_update_post( $post_data, true );
                 } else {
+                    $post_data['post_status'] = ( 'tribe_events' === $post_type ) ? open_events_get_default_event_status() : 'draft';
                     $post_data['post_author'] = $current_user_id;
                     $post_id = wp_insert_post( $post_data, true );
                 }
@@ -731,6 +808,14 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     $error_msg = $post_id->get_error_message();
                 } else {
                     if ( 'tribe_events' === $post_type ) {
+                        if ( $is_admin_view ) {
+                            if ( isset( $_POST['is_featured'] ) ) {
+                                update_post_meta( $post_id, '_tribe_featured', '1' );
+                            } else {
+                                delete_post_meta( $post_id, '_tribe_featured' );
+                            }
+                        }
+
                         $is_all_day = isset( $_POST['all_day_event'] ) ? 'yes' : 'no';
                         update_post_meta( $post_id, '_EventAllDay', $is_all_day );
 
@@ -943,6 +1028,21 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                         </label>
                         <input type="text" name="post_title" required value="<?php echo esc_attr( $edit_post ? $edit_post->post_title : '' ); ?>" placeholder="<?php esc_attr_e( 'Es. Concerto sotto le stelle, Aperitivo al Castello...', 'open-events' ); ?>">
                     </div>
+
+                    <?php if ( 'tribe_events' === $post_type && $is_admin_view ):
+                        $is_featured_val = $edit_post ? get_post_meta( $edit_post->ID, '_tribe_featured', true ) : '';
+                        $featured_limit_display = open_events_get_featured_limit();
+                        ?>
+                        <div class="em-form-group em-featured-checkbox-group">
+                            <label class="em-checkbox-label">
+                                <input type="checkbox" name="is_featured" value="yes" <?php checked( $is_featured_val, '1' ); ?>>
+                                <span><?php esc_html_e( 'Evento in Primo Piano (resta in cima all\'elenco eventi)', 'open-events' ); ?></span>
+                            </label>
+                            <?php if ( $featured_limit_display > 0 ): ?>
+                                <small class="em-field-help"><?php printf( esc_html__( 'Massimo %d eventi contemporaneamente in primo piano (modificabile nelle impostazioni del plugin).', 'open-events' ), $featured_limit_display ); ?></small>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
 
                     <?php if ( 'tribe_events' === $post_type && ! is_wp_error( $categories ) && ! empty( $categories ) ): ?>
                         <div class="em-form-group">

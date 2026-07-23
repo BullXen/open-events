@@ -652,6 +652,22 @@ p.em-section-subtitle {
     background-color: #fef3c7;
     color: #92400e;
 }
+.em-featured-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 6px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    background-color: #fef3c7;
+    color: #b45309;
+    vertical-align: middle;
+}
+.em-featured-badge .em-icon {
+    font-size: 10px;
+}
 
 /* Buttons */
 .em-submit-btn {
@@ -736,6 +752,34 @@ p.em-section-subtitle {
 }
 .em-action-btn.edit-btn:hover {
     background: #0284c7;
+    color: #ffffff;
+}
+.em-action-btn.publish-btn {
+    background: #d1fae5;
+    color: #065f46;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+.em-action-btn.publish-btn:hover {
+    background: #059669;
+    color: #ffffff;
+}
+.em-action-btn.delete-btn {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+.em-action-btn.delete-btn:hover {
+    background: #dc2626;
     color: #ffffff;
 }
 
@@ -973,6 +1017,10 @@ p.em-section-subtitle {
     .em-action-btn.edit-btn {
         order: 3;
         margin-left: auto;
+    }
+    .em-action-btn.publish-btn,
+    .em-action-btn.delete-btn {
+        order: 3;
     }
 }
 @media screen and (max-width: 400px) {
