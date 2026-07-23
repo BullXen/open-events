@@ -702,7 +702,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                                             <?php if ( $is_admin_view ) :
                                                 $post_author_data = get_userdata( $p->post_author );
                                                 ?>
-                                                <?php echo $meta_line ? ' · ' : ''; ?><?php printf( esc_html__( 'di %s', 'open-events' ), esc_html( $post_author_data ? $post_author_data->display_name : esc_html__( 'Sconosciuto', 'open-events' ) ) ); ?>
+                                                <?php echo $meta_line ? ' · ' : ''; ?><?php printf( esc_html__( 'di %1$s (%2$s)', 'open-events' ), esc_html( $post_author_data ? $post_author_data->display_name : esc_html__( 'Sconosciuto', 'open-events' ) ), esc_html( $post_author_data ? '@' . $post_author_data->user_login : '—' ) ); ?>
                                             <?php endif; ?>
                                         </span>
                                     <?php endif; ?>
@@ -710,6 +710,9 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                                 <span class="em-status-badge <?php echo esc_attr( $p->post_status ); ?>"><?php echo esc_html( get_post_status_object( $p->post_status )->label ); ?></span>
                                 <a href="<?php echo esc_url( add_query_arg( 'edit_id', $p->ID ) ); ?>" class="em-action-btn edit-btn">
                                     <?php esc_html_e( 'Modifica', 'open-events' ); ?>
+                                </a>
+                                <a href="<?php echo esc_url( 'publish' === $p->post_status ? get_permalink( $p->ID ) : get_preview_post_link( $p ) ); ?>" class="em-action-btn preview-btn" target="_blank" rel="noopener noreferrer">
+                                    <?php esc_html_e( 'Anteprima', 'open-events' ); ?>
                                 </a>
                                 <?php if ( $is_admin_view ) : ?>
                                     <?php if ( 'publish' !== $p->post_status ) : ?>

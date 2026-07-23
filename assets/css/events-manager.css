@@ -754,6 +754,20 @@ p.em-section-subtitle {
     background: #0284c7;
     color: #ffffff;
 }
+.em-action-btn.preview-btn {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+.em-action-btn.preview-btn:hover {
+    background: #475569;
+    color: #ffffff;
+}
 .em-action-btn.publish-btn {
     background: #d1fae5;
     color: #065f46;
@@ -1018,6 +1032,7 @@ p.em-section-subtitle {
         order: 3;
         margin-left: auto;
     }
+    .em-action-btn.preview-btn,
     .em-action-btn.publish-btn,
     .em-action-btn.delete-btn {
         order: 3;
