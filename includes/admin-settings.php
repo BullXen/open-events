@@ -133,8 +133,15 @@ function open_events_force_post_status( $post_id, $new_status ) {
 	$old_status = $post->post_status;
 	$data = [ 'post_status' => $new_status ];
 
-	if ( 'publish' === $new_status && empty( $post->post_name ) ) {
-		$data['post_name'] = wp_unique_post_slug( sanitize_title( $post->post_title ), $post_id, $new_status, $post->post_type, $post->post_parent );
+	if ( 'publish' === $new_status ) {
+		if ( empty( $post->post_name ) ) {
+			$data['post_name'] = wp_unique_post_slug( sanitize_title( $post->post_title ), $post_id, $new_status, $post->post_type, $post->post_parent );
+		}
+		// Bypassando wp_update_post() qui non rischiamo la conversione automatica
+		// in 'future' per un post_date fuori dall'ordinario, ma lo forziamo comunque
+		// cosi' resta coerente con quanto ci si aspetta da un evento "pubblicato ora".
+		$data['post_date'] = current_time( 'mysql' );
+		$data['post_date_gmt'] = current_time( 'mysql', true );
 	}
 
 	$wpdb->update( $wpdb->posts, $data, [ 'ID' => $post_id ] );

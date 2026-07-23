@@ -347,15 +347,19 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             $target_post = get_post( $target_id );
             if ( $target_post && $target_post->post_type === $post_type ) {
                 $redirect_back = remove_query_arg( [ 'em_action', 'post_id', '_wpnonce' ] );
+                $requested_action = $_GET['em_action'];
+                $nonce_action = 'delete' === $requested_action ? 'em_delete_' . $target_id : 'em_publish_' . $target_id;
 
-                if ( 'delete' === $_GET['em_action'] && wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'em_delete_' . $target_id ) ) {
+                if ( in_array( $requested_action, [ 'delete', 'publish' ], true ) && ! wp_verify_nonce( $_GET['_wpnonce'] ?? '', $nonce_action ) ) {
+                    echo '<div class="em-alert error">' . esc_html__( 'Link di azione scaduto o non valido. Torna alla lista e riprova.', 'open-events' ) . '</div>';
+                } elseif ( 'delete' === $requested_action ) {
                     wp_trash_post( $target_id );
                     if ( 'trash' !== get_post_status( $target_id ) ) {
                         open_events_force_post_status( $target_id, 'trash' );
                     }
                     echo '<script type="text/javascript">window.location.href = "' . esc_url_raw( $redirect_back ) . '";</script>';
                     return;
-                } elseif ( 'publish' === $_GET['em_action'] && wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'em_publish_' . $target_id ) ) {
+                } elseif ( 'publish' === $requested_action ) {
                     if ( empty( $target_post->post_name ) ) {
                         // Un post inserito come "in attesa" può non avere mai avuto uno
                         // slug/permalink generato: senza, l'URL pubblico dell'evento
@@ -363,7 +367,18 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                         $new_slug = wp_unique_post_slug( sanitize_title( $target_post->post_title ), $target_id, 'publish', $target_post->post_type, $target_post->post_parent );
                         wp_update_post( [ 'ID' => $target_id, 'post_name' => $new_slug ] );
                     }
-                    wp_update_post( [ 'ID' => $target_id, 'post_status' => 'publish' ] );
+
+                    // Se post_date è nel passato/futuro rispetto a "adesso" per qualsiasi
+                    // motivo, wp_update_post() converte 'publish' in 'future' (post
+                    // programmato, invisibile pubblicamente) invece di pubblicarlo
+                    // davvero. Forziamo post_date a questo istante per evitarlo.
+                    wp_update_post( [
+                        'ID'            => $target_id,
+                        'post_status'   => 'publish',
+                        'post_date'     => current_time( 'mysql' ),
+                        'post_date_gmt' => current_time( 'mysql', true ),
+                    ] );
+
                     if ( 'publish' !== get_post_status( $target_id ) ) {
                         // Alcuni CPT (es. tribe_events di The Events Calendar) mappano le
                         // capability di pubblicazione in modo non standard e possono far

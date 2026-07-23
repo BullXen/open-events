@@ -34,6 +34,9 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * Miglioramento: nell'elenco, immagine e titolo aprono la scheda di modifica; l'icona Modifica è ora l'ultima a destra, Anteprima e Pubblica precedono lo stato; se la visualizzazione "pubblicato da" è impostata su Organizzatore, viene mostrato solo il nome dell'organizzatore (cliccabile, apre la sua scheda) invece di "di autore (organizzatore)".
 * Fix: il titolo del form "Nuovo Luogo" e "Nuovo Organizzatore" mostrava erroneamente "Inserisci Nuovo Evento".
 * Nuovo: nel form Luogo/Organizzatore, campo admin "Assegna a" in fondo pagina — se lasciato vuoto l'elemento resta assegnato all'account admin, altrimenti si può scegliere a quale utente assegnarlo (anche in modifica, per riassegnare elementi esistenti).
+* Fix: l'ordinamento "in primo piano" nel calendario pubblico non aveva alcun effetto perché la Lista Eventi di The Events Calendar non è la query principale della pagina; il filtro era limitato per errore alla sola query principale.
+* Fix: pubblicare un evento tramite l'admin poteva lasciarlo comunque invisibile (404) perché WordPress converte automaticamente lo stato "pubblicato" in "programmato" se il post_date esistente non è coerente con l'istante attuale; ora viene forzato all'istante della pubblicazione.
+* Miglioramento: se il link "Pubblica"/"Elimina" non è più valido (sessione scaduta) viene ora mostrato un messaggio d'errore invece di non fare nulla in silenzio.
 
 = 1.0.6 =
 * Fix: confermato bug persistente su "I Miei Eventi" nonostante 1.0.5 (priorità pre_get_posts non bastava, probabile filtro SQL diretto di un altro plugin). Query della lista ora bypassa completamente WP_Query/WordPress hooks con lettura diretta al database, nessun plugin terzo può più interferire.

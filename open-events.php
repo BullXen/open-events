@@ -30,10 +30,14 @@ require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/admin-settings.php';
  * per data che usa TEC internamente resta intatto per gli eventi non
  * in primo piano. Agganciato a posts_clauses (non pre_get_posts) perché
  * altri filtri di TEC intervengono a quel livello e $query->set() da solo
- * non basta a garantire la precedenza.
+ * non basta a garantire la precedenza. NON limitato a is_main_query(): la
+ * Lista Eventi di TEC (Views v2) costruisce la propria query internamente
+ * e non risulta la query principale della pagina, quindi quel controllo
+ * la escludeva sempre (verificato: il filtro non aveva alcun effetto sul
+ * front-end finché non è stato tolto).
  */
 function open_events_pin_featured_events_clauses( $clauses, $query ) {
-	if ( is_admin() || ! $query->is_main_query() ) {
+	if ( is_admin() ) {
 		return $clauses;
 	}
 
