@@ -7,6 +7,7 @@ const DESCRIPTION_EDITOR_OPTION   = 'open_events_description_editor';
 const AVAILABLE_CITIES_OPTION     = 'open_events_available_cities';
 const FEATURED_LABEL_OPTION       = 'open_events_featured_label';
 const FEATURED_LIMIT_OPTION       = 'open_events_featured_limit';
+const PUBLISHED_BY_DISPLAY_OPTION = 'open_events_published_by_display';
 
 /**
  * Trova la posizione del menu "Eventi" (tribe_events) cosi' da inserire
@@ -86,6 +87,13 @@ function open_events_get_featured_limit() {
 	return $limit;
 }
 
+function open_events_get_published_by_display() {
+	$mode    = get_option( PUBLISHED_BY_DISPLAY_OPTION, 'organizer' );
+	$allowed = [ 'organizer', 'username', 'email' ];
+
+	return in_array( $mode, $allowed, true ) ? $mode : 'organizer';
+}
+
 /**
  * Conta gli eventi attualmente in primo piano, escludendo opzionalmente
  * un post (usato in fase di salvataggio per non contare l'evento che si
@@ -154,6 +162,14 @@ function open_events_render_settings_page() {
 		$featured_limit = absint( wp_unslash( $_POST['featured_limit'] ?? 0 ) );
 		update_option( FEATURED_LIMIT_OPTION, $featured_limit );
 		$saved = true;
+
+		$allowed_published_by = [ 'organizer', 'username', 'email' ];
+		$published_by          = sanitize_text_field( wp_unslash( $_POST['published_by_display'] ?? '' ) );
+
+		if ( in_array( $published_by, $allowed_published_by, true ) ) {
+			update_option( PUBLISHED_BY_DISPLAY_OPTION, $published_by );
+			$saved = true;
+		}
 	}
 
 	$current_status = open_events_get_default_event_status();
@@ -162,6 +178,7 @@ function open_events_render_settings_page() {
 	$current_featured_label = open_events_get_featured_label();
 	$current_featured_limit = open_events_get_featured_limit();
 	$current_featured_count = open_events_count_featured_events();
+	$current_published_by = open_events_get_published_by_display();
 	?>
 	<div class="wrap">
 		<h1><?php esc_html_e( 'Open Events - Impostazioni', 'open-events' ); ?></h1>
@@ -252,6 +269,33 @@ function open_events_render_settings_page() {
 								intval( $current_featured_count )
 							); ?>
 						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Visualizzazione "pubblicato da"', 'open-events' ); ?></th>
+					<td>
+						<fieldset>
+							<legend class="screen-reader-text"><?php esc_html_e( 'Visualizzazione "pubblicato da"', 'open-events' ); ?></legend>
+
+							<label>
+								<input type="radio" name="published_by_display" value="organizer" <?php checked( $current_published_by, 'organizer' ); ?>>
+								<?php esc_html_e( 'Nome Organizzatore', 'open-events' ); ?>
+							</label><br>
+
+							<label>
+								<input type="radio" name="published_by_display" value="username" <?php checked( $current_published_by, 'username' ); ?>>
+								<?php esc_html_e( 'Username', 'open-events' ); ?>
+							</label><br>
+
+							<label>
+								<input type="radio" name="published_by_display" value="email" <?php checked( $current_published_by, 'email' ); ?>>
+								<?php esc_html_e( 'Email', 'open-events' ); ?>
+							</label>
+
+							<p class="description">
+								<?php esc_html_e( 'Cosa mostrare, accanto al nome di chi ha inserito l\'evento, nell\'elenco eventi lato admin. "Nome Organizzatore" mostra l\'organizzatore collegato all\'evento (se presente), altrimenti ricade sullo username.', 'open-events' ); ?>
+							</p>
+						</fieldset>
 					</td>
 				</tr>
 			</table>

@@ -707,8 +707,12 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                                                 $post_author_data = get_userdata( $p->post_author );
                                                 $author_name = $post_author_data ? $post_author_data->display_name : esc_html__( 'Sconosciuto', 'open-events' );
 
+                                                $published_by_mode = open_events_get_published_by_display();
                                                 $author_suffix = $post_author_data ? '@' . $post_author_data->user_login : '—';
-                                                if ( 'tribe_events' === $post_type ) {
+
+                                                if ( 'email' === $published_by_mode ) {
+                                                    $author_suffix = $post_author_data ? $post_author_data->user_email : '—';
+                                                } elseif ( 'organizer' === $published_by_mode && 'tribe_events' === $post_type ) {
                                                     $organizer_id = get_post_meta( $p->ID, '_EventOrganizerID', true );
                                                     $organizer_title = $organizer_id ? get_the_title( $organizer_id ) : '';
                                                     if ( $organizer_title ) {

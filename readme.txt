@@ -28,6 +28,8 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * Nuovo: pulsante "Anteprima" nell'elenco eventi/luoghi/organizzatori, apre l'elemento in una nuova scheda (usa l'anteprima nativa di WordPress per bozze/in attesa di revisione).
 * Nuovo: nell'elenco, per gli admin, è ora visibile anche lo username (oltre al nome visualizzato) di chi ha inserito l'evento.
 * Nuovo: gli eventi "in primo piano" ora vengono portati in cima anche nel calendario pubblico del sito (non solo nella dashboard del portale), mantenendo l'ordinamento per data di The Events Calendar per tutti gli altri eventi.
+* Miglioramento: le azioni "Modifica/Anteprima/Pubblica/Elimina" nell'elenco sono ora icone compatte invece di testo.
+* Nuovo: opzione "Visualizzazione 'pubblicato da'" in Impostazioni — scegli se accanto al nome di chi ha inserito l'evento mostrare il Nome Organizzatore collegato, lo Username o l'Email.
 
 = 1.0.6 =
 * Fix: confermato bug persistente su "I Miei Eventi" nonostante 1.0.5 (priorità pre_get_posts non bastava, probabile filtro SQL diretto di un altro plugin). Query della lista ora bypassa completamente WP_Query/WordPress hooks con lettura diretta al database, nessun plugin terzo può più interferire.
