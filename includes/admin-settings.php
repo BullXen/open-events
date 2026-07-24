@@ -151,6 +151,14 @@ function open_events_force_post_status( $post_id, $new_status ) {
 	wp_transition_post_status( $new_status, $old_status, $updated_post );
 	do_action( 'save_post', $post_id, $updated_post, true );
 	do_action( 'save_post_' . $updated_post->post_type, $post_id, $updated_post, true );
+
+	if ( 'tribe_events' === $updated_post->post_type ) {
+		// Stesso motivo del rilancio in class-widget-events-manager.php: TEC deve
+		// risincronizzare le sue tabelle interne (occorrenze) dopo un cambio di
+		// stato forzato via query diretta, altrimenti l'evento risulta "publish"
+		// in wp_posts ma resta invisibile lato TEC.
+		do_action( 'tribe_events_update_meta', $post_id, [] );
+	}
 }
 
 function open_events_parse_cities_input( $raw ) {
