@@ -386,6 +386,11 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                         // già verificato sopra tramite $is_admin_view. Scrittura diretta +
                         // hook di transizione rilanciati a mano cosi' TEC resta sincronizzato.
                         open_events_force_post_status( $target_id, 'publish' );
+                    } elseif ( 'tribe_events' === $target_post->post_type ) {
+                        // Rilancia anche qui la sincronizzazione TEC (tabelle interne/
+                        // occorrenze): copre gli eventi creati prima di questa fix che sono
+                        // rimasti "orfani" lato TEC nonostante post_status corretto.
+                        do_action( 'tribe_events_update_meta', $target_id, [] );
                     }
                     echo '<script type="text/javascript">window.location.href = "' . esc_url_raw( $redirect_back ) . '";</script>';
                     return;
@@ -967,6 +972,19 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                         if ( ! empty( $org_id ) ) {
                             update_post_meta( $post_id, '_EventOrganizerID', intval( $org_id ) );
                         }
+
+                        // wp_insert_post()/wp_update_post() lanciano save_post_tribe_events
+                        // SUBITO, prima che i update_post_meta() qui sopra scrivano data/ora/
+                        // luogo/organizzatore. The Events Calendar sincronizza le sue tabelle
+                        // interne (occorrenze) proprio agganciandosi a quell'hook: se scatta a
+                        // meta ancora vuoti, l'evento resta "non pronto" per TEC anche se
+                        // post_status in wp_posts è corretto — invisibile sia in anteprima che
+                        // pubblicato, finché qualcuno non lo risalva da wp-admin (dove il
+                        // metabox nativo scrive i meta PRIMA del save). Rilanciamo qui gli
+                        // stessi hook ora che i meta sono completi, cosi' TEC si allinea subito.
+                        $synced_event_post = get_post( $post_id );
+                        do_action( 'save_post_tribe_events', $post_id, $synced_event_post, 'edit' === $current_action );
+                        do_action( 'tribe_events_update_meta', $post_id, [] );
 
                         if ( ! empty( $_FILES['logo_image']['name'] ) ) {
                             require_once( ABSPATH . 'wp-admin/includes/image.php' );
