@@ -157,8 +157,83 @@ function open_events_force_post_status( $post_id, $new_status ) {
 		// risincronizzare le sue tabelle interne (occorrenze) dopo un cambio di
 		// stato forzato via query diretta, altrimenti l'evento risulta "publish"
 		// in wp_posts ma resta invisibile lato TEC.
+		open_events_sync_event_custom_tables( $post_id );
+	}
+}
+
+/**
+ * Sincronizza un evento con le "custom tables" di The Events Calendar 6+
+ * (tabelle tec_events / tec_occurrences), da cui dipende la visibilita' nel
+ * calendario pubblico.
+ *
+ * PERCHE' SERVE: il widget front-end crea l'evento con wp_insert_post() +
+ * update_post_meta() scrivendo solo le date LOCALI (_EventStartDate/_EventEndDate).
+ * TEC 6, per costruire un'occorrenza, pretende invece anche i meta derivati
+ * _EventStartDateUTC, _EventEndDateUTC, _EventTimezone e _EventDuration: senza,
+ * TEC\...\Models\Builder::upsert() fallisce ("The start_date_utc requires a value")
+ * e NON crea alcuna occorrenza. Risultato: l'evento e' 'publish' in wp_posts ma
+ * resta invisibile nel calendario pubblico (occorrenze = 0). Il metabox nativo di
+ * TEC in wp-admin scrive quei meta prima del save, il widget no: da qui il bug.
+ *
+ * Questa funzione calcola i meta UTC/timezone/durata dalle date locali e forza
+ * TEC a ricostruire subito (sincrono) evento + occorrenze.
+ */
+function open_events_sync_event_custom_tables( $post_id ) {
+	if ( 'tribe_events' !== get_post_type( $post_id ) ) {
+		return;
+	}
+
+	$start_local = get_post_meta( $post_id, '_EventStartDate', true );
+	$end_local   = get_post_meta( $post_id, '_EventEndDate', true );
+	if ( empty( $start_local ) || empty( $end_local ) ) {
+		return;
+	}
+
+	// Timezone: rispetta quella gia' impostata sull'evento, altrimenti quella del sito.
+	$tz_string = get_post_meta( $post_id, '_EventTimezone', true );
+	if ( empty( $tz_string ) ) {
+		$tz_string = get_option( 'timezone_string' );
+		if ( empty( $tz_string ) ) {
+			$tz_string = 'UTC';
+		}
+	}
+
+	try {
+		$tz = new \DateTimeZone( $tz_string );
+	} catch ( \Exception $e ) {
+		$tz        = new \DateTimeZone( 'UTC' );
+		$tz_string = 'UTC';
+	}
+
+	try {
+		$start_obj = new \DateTime( $start_local, $tz );
+		$end_obj   = new \DateTime( $end_local, $tz );
+	} catch ( \Exception $e ) {
+		return;
+	}
+
+	$utc       = new \DateTimeZone( 'UTC' );
+	$start_utc = ( clone $start_obj )->setTimezone( $utc )->format( 'Y-m-d H:i:s' );
+	$end_utc   = ( clone $end_obj )->setTimezone( $utc )->format( 'Y-m-d H:i:s' );
+	$duration  = $end_obj->getTimestamp() - $start_obj->getTimestamp();
+
+	update_post_meta( $post_id, '_EventTimezone', $tz_string );
+	update_post_meta( $post_id, '_EventTimezoneAbbr', $start_obj->format( 'T' ) );
+	update_post_meta( $post_id, '_EventStartDateUTC', $start_utc );
+	update_post_meta( $post_id, '_EventEndDateUTC', $end_utc );
+	update_post_meta( $post_id, '_EventDuration', (string) $duration );
+
+	// Forza TEC 6 a (ri)costruire evento + occorrenze SUBITO. Senza questo, la
+	// sincronizzazione delle custom tables e' rimandata a 'shutdown' e, per un
+	// evento salvato dal front-end, puo' non avvenire affatto.
+	if ( class_exists( '\TEC\Events\Custom_Tables\V1\Updates\Events' ) ) {
+		\tribe( \TEC\Events\Custom_Tables\V1\Updates\Events::class )->update( $post_id );
+	} else {
+		// Fallback per versioni di TEC precedenti alle custom tables.
 		do_action( 'tribe_events_update_meta', $post_id, [] );
 	}
+
+	clean_post_cache( $post_id );
 }
 
 function open_events_parse_cities_input( $raw ) {

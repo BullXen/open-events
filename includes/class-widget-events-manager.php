@@ -387,10 +387,11 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                         // hook di transizione rilanciati a mano cosi' TEC resta sincronizzato.
                         open_events_force_post_status( $target_id, 'publish' );
                     } elseif ( 'tribe_events' === $target_post->post_type ) {
-                        // Rilancia anche qui la sincronizzazione TEC (tabelle interne/
-                        // occorrenze): copre gli eventi creati prima di questa fix che sono
-                        // rimasti "orfani" lato TEC nonostante post_status corretto.
-                        do_action( 'tribe_events_update_meta', $target_id, [] );
+                        // Ricostruisce evento + occorrenze nelle custom tables di TEC 6:
+                        // copre gli eventi creati prima di questa fix, che non hanno mai
+                        // generato un'occorrenza e restano invisibili nel calendario
+                        // pubblico nonostante post_status corretto.
+                        open_events_sync_event_custom_tables( $target_id );
                     }
                     echo '<script type="text/javascript">window.location.href = "' . esc_url_raw( $redirect_back ) . '";</script>';
                     return;
@@ -984,7 +985,12 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                         // stessi hook ora che i meta sono completi, cosi' TEC si allinea subito.
                         $synced_event_post = get_post( $post_id );
                         do_action( 'save_post_tribe_events', $post_id, $synced_event_post, 'edit' === $current_action );
-                        do_action( 'tribe_events_update_meta', $post_id, [] );
+
+                        // Calcola i meta UTC/timezone/durata richiesti dalle custom tables di
+                        // TEC 6 e forza la ricostruzione di evento + occorrenze. Senza questo
+                        // passaggio l'evento non genera alcuna occorrenza e resta invisibile
+                        // nel calendario pubblico anche dopo la pubblicazione.
+                        open_events_sync_event_custom_tables( $post_id );
 
                         if ( ! empty( $_FILES['logo_image']['name'] ) ) {
                             require_once( ABSPATH . 'wp-admin/includes/image.php' );

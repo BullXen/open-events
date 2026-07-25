@@ -4,7 +4,7 @@ Tags: events, elementor, the-events-calendar, front-end submission
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.7
+Stable tag: 1.0.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,11 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * I nuovi eventi vengono salvati come "in attesa di revisione" (pending) cosi' un amministratore puo' approvarli prima della pubblicazione; luoghi e organizzatori restano in bozza.
 
 == Changelog ==
+
+= 1.0.8 =
+* Fix: gli eventi salvati o pubblicati dal portale front-end restavano invisibili nel calendario pubblico con The Events Calendar 6+ (custom tables). Il widget scriveva solo le date locali, ma TEC 6 per generare l'occorrenza pretende anche i meta UTC/timezone/durata: senza, non veniva creata alcuna occorrenza e l'evento non compariva mai, pur risultando "pubblicato". Ora il plugin calcola quei meta e forza TEC a ricostruire subito evento e occorrenze, sia al salvataggio sia dal pulsante "Pubblica" (che ripara anche gli eventi creati prima di questa fix).
+* Fix: l'evento "in primo piano" non veniva portato in cima alle liste del calendario pubblico con The Events Calendar 6+ perché la query eventi veniva riconosciuta tramite tribe_is_event_query(), che con la nuova architettura (Views v2 / custom tables) restituisce sempre "falso" per le query del calendario; ora la query viene riconosciuta dal tipo di contenuto (post_type), così l'ordinamento in primo piano viene applicato di nuovo.
+* Nuovo: l'etichetta "in primo piano" (con il testo dell'opzione "Testo In Primo Piano") viene ora mostrata anche sulle card degli eventi in evidenza nel calendario pubblico del sito, sotto il titolo, e non solo nel portale.
 
 = 1.0.7 =
 * Nuovo: gli amministratori possono ora vedere, modificare, pubblicare ed eliminare (cestino) eventi, luoghi e organizzatori di **tutti** gli utenti dal portale front-end, non solo i propri; l'autore è indicato in elenco. Modificare un elemento come admin non ne resetta più lo stato a "in attesa di revisione".
