@@ -8,6 +8,7 @@ const AVAILABLE_CITIES_OPTION     = 'open_events_available_cities';
 const FEATURED_LABEL_OPTION       = 'open_events_featured_label';
 const FEATURED_LIMIT_OPTION       = 'open_events_featured_limit';
 const PUBLISHED_BY_DISPLAY_OPTION = 'open_events_published_by_display';
+const VENUE_VISIBILITY_OPTION     = 'open_events_venue_visibility';
 
 /**
  * Trova la posizione del menu "Eventi" (tribe_events) cosi' da inserire
@@ -92,6 +93,18 @@ function open_events_get_published_by_display() {
 	$allowed = [ 'organizer', 'username', 'email' ];
 
 	return in_array( $mode, $allowed, true ) ? $mode : 'organizer';
+}
+
+/**
+ * Visibilità dei luoghi nel menu a tendina del form evento:
+ * 'all'  = l'utente vede tutti i luoghi pubblicati (default);
+ * 'own'  = l'utente vede solo i luoghi che ha inserito lui stesso.
+ */
+function open_events_get_venue_visibility() {
+	$mode    = get_option( VENUE_VISIBILITY_OPTION, 'all' );
+	$allowed = [ 'all', 'own' ];
+
+	return in_array( $mode, $allowed, true ) ? $mode : 'all';
 }
 
 /**
@@ -292,6 +305,12 @@ function open_events_render_settings_page() {
 			update_option( PUBLISHED_BY_DISPLAY_OPTION, $published_by );
 			$saved = true;
 		}
+
+		$venue_visibility = sanitize_text_field( wp_unslash( $_POST['venue_visibility'] ?? '' ) );
+		if ( in_array( $venue_visibility, [ 'all', 'own' ], true ) ) {
+			update_option( VENUE_VISIBILITY_OPTION, $venue_visibility );
+			$saved = true;
+		}
 	}
 
 	$current_status = open_events_get_default_event_status();
@@ -301,6 +320,7 @@ function open_events_render_settings_page() {
 	$current_featured_limit = open_events_get_featured_limit();
 	$current_featured_count = open_events_count_featured_events();
 	$current_published_by = open_events_get_published_by_display();
+	$current_venue_visibility = open_events_get_venue_visibility();
 	?>
 	<div class="wrap">
 		<h1><?php esc_html_e( 'Open Events - Impostazioni', 'open-events' ); ?></h1>
@@ -416,6 +436,28 @@ function open_events_render_settings_page() {
 
 							<p class="description">
 								<?php esc_html_e( 'Cosa mostrare, accanto al nome di chi ha inserito l\'evento, nell\'elenco eventi lato admin. "Nome Organizzatore" mostra l\'organizzatore collegato all\'evento (se presente), altrimenti ricade sullo username.', 'open-events' ); ?>
+							</p>
+						</fieldset>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Visibilità luoghi nel form evento', 'open-events' ); ?></th>
+					<td>
+						<fieldset>
+							<legend class="screen-reader-text"><?php esc_html_e( 'Visibilità luoghi nel form evento', 'open-events' ); ?></legend>
+
+							<label>
+								<input type="radio" name="venue_visibility" value="all" <?php checked( $current_venue_visibility, 'all' ); ?>>
+								<?php esc_html_e( 'Tutti i luoghi', 'open-events' ); ?>
+							</label><br>
+
+							<label>
+								<input type="radio" name="venue_visibility" value="own" <?php checked( $current_venue_visibility, 'own' ); ?>>
+								<?php esc_html_e( 'Solo i luoghi inseriti dall\'utente', 'open-events' ); ?>
+							</label>
+
+							<p class="description">
+								<?php esc_html_e( 'Quali luoghi può scegliere l\'utente nel menu a tendina "Seleziona Luogo" quando inserisce un evento. "Tutti i luoghi" (predefinito) mostra ogni luogo pubblicato; "Solo i luoghi inseriti dall\'utente" limita la scelta ai luoghi creati da lui. Gli amministratori vedono comunque tutti i luoghi.', 'open-events' ); ?>
 							</p>
 						</fieldset>
 					</td>

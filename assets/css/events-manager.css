@@ -1057,3 +1057,57 @@ p.em-section-subtitle {
         grid-template-columns: 1fr;
     }
 }
+
+/* ===== Gestione Utenti (solo admin) ===== */
+.em-count-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    background: #e0f2fe;
+    color: #0369a1;
+    vertical-align: middle;
+}
+.em-user-avatar img {
+    border-radius: 50%;
+}
+.em-user-login {
+    margin-left: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+}
+.em-user-role-form {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+}
+.em-user-role-select {
+    padding: 6px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    font-size: 13px;
+    color: #1e293b;
+    max-width: 150px;
+}
+.em-user-role-select:disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+@media screen and (max-width: 782px) {
+    .em-user-row {
+        flex-wrap: wrap;
+    }
+    .em-user-row .em-item-info {
+        flex: 1 1 100%;
+    }
+    .em-user-role-select {
+        max-width: none;
+        flex: 1;
+    }
+}

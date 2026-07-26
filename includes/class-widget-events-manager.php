@@ -206,6 +206,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             'calendar' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="9" x2="21" y2="9"/></svg>',
             'map-pin'  => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5.5-8 12-8 12s-8-6.5-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>',
             'person'   => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>',
+            'users'    => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
             'home'     => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
             'exit'     => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
             'link'     => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>',
@@ -232,8 +233,14 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             'tribe_events'    => [ 'label' => esc_html__( 'I Miei Eventi', 'open-events' ), 'icon' => 'calendar' ],
             'tribe_venue'     => [ 'label' => esc_html__( 'I Miei Luoghi', 'open-events' ), 'icon' => 'map-pin' ],
             'tribe_organizer' => [ 'label' => esc_html__( 'I Miei Organizzatori', 'open-events' ), 'icon' => 'person' ],
-            'profile'         => [ 'label' => esc_html__( 'Profilo', 'open-events' ), 'icon' => 'person' ],
         ];
+
+        // La gestione utenti è riservata agli amministratori.
+        if ( current_user_can( 'manage_options' ) ) {
+            $nav_items['users'] = [ 'label' => esc_html__( 'Utenti', 'open-events' ), 'icon' => 'users' ];
+        }
+
+        $nav_items['profile'] = [ 'label' => esc_html__( 'Profilo', 'open-events' ), 'icon' => 'person' ];
         ?>
         <aside class="em-portal-sidebar">
             <div class="em-portal-sidebar-user">
@@ -334,7 +341,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
         $post_type = '';
         if ( 'hub' === $action_mode ) {
             $post_type = isset( $_GET['view'] ) ? sanitize_text_field( $_GET['view'] ) : '';
-            if ( ! in_array( $post_type, [ 'tribe_events', 'tribe_organizer', 'tribe_venue', 'profile' ] ) ) {
+            if ( ! in_array( $post_type, [ 'tribe_events', 'tribe_organizer', 'tribe_venue', 'profile', 'users' ] ) ) {
                 $post_type = '';
             }
         } else {
@@ -546,6 +553,167 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             return;
         }
 
+        // Handle Utenti (gestione utenti iscritti — solo amministratori)
+        if ( 'users' === $post_type ) {
+            if ( ! $is_admin_view ) {
+                echo '<div class="em-alert error">' . esc_html__( 'Non hai i permessi per gestire gli utenti.', 'open-events' ) . '</div>';
+                if ( $show_sidebar ) {
+                    echo '</div></div>';
+                }
+                return;
+            }
+
+            require_once ABSPATH . 'wp-admin/includes/user.php';
+
+            $users_notice = '';
+            $users_error  = '';
+            $editable_roles = get_editable_roles();
+            $editable_role_keys = array_keys( $editable_roles );
+            $admin_count = count( get_users( [ 'role' => 'administrator', 'fields' => 'ID' ] ) );
+
+            // Azione: cambio ruolo (POST)
+            if ( isset( $_POST['oe_user_role_submit'], $_POST['oe_user_id'] )
+                && wp_verify_nonce( $_POST['oe_user_role_nonce'] ?? '', 'oe_user_role' ) ) {
+                $target_uid = intval( $_POST['oe_user_id'] );
+                $new_role   = sanitize_text_field( wp_unslash( $_POST['oe_user_role'] ?? '' ) );
+                $target     = get_userdata( $target_uid );
+
+                if ( ! current_user_can( 'promote_users' ) ) {
+                    $users_error = esc_html__( 'Non hai i permessi per cambiare i ruoli.', 'open-events' );
+                } elseif ( $target_uid === $current_user_id ) {
+                    $users_error = esc_html__( 'Non puoi cambiare il tuo stesso ruolo da qui.', 'open-events' );
+                } elseif ( ! $target ) {
+                    $users_error = esc_html__( 'Utente non trovato.', 'open-events' );
+                } elseif ( ! in_array( $new_role, $editable_role_keys, true ) ) {
+                    $users_error = esc_html__( 'Ruolo non valido.', 'open-events' );
+                } elseif ( in_array( 'administrator', (array) $target->roles, true ) && 'administrator' !== $new_role && $admin_count <= 1 ) {
+                    $users_error = esc_html__( 'Non puoi rimuovere il ruolo all\'unico amministratore rimasto.', 'open-events' );
+                } else {
+                    $target->set_role( $new_role );
+                    $users_notice = sprintf( esc_html__( 'Ruolo di %s aggiornato.', 'open-events' ), $target->display_name );
+                }
+            }
+
+            // Azione: elimina utente (GET con nonce). I contenuti vengono riassegnati all'admin corrente.
+            if ( isset( $_GET['oe_user_action'], $_GET['user_id'] ) && 'delete' === $_GET['oe_user_action'] ) {
+                $target_uid = intval( $_GET['user_id'] );
+
+                if ( ! wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'oe_user_delete_' . $target_uid ) ) {
+                    $users_error = esc_html__( 'Link di eliminazione scaduto o non valido. Riprova.', 'open-events' );
+                } elseif ( ! current_user_can( 'delete_users' ) ) {
+                    $users_error = esc_html__( 'Non hai i permessi per eliminare utenti.', 'open-events' );
+                } elseif ( $target_uid === $current_user_id ) {
+                    $users_error = esc_html__( 'Non puoi eliminare il tuo stesso account.', 'open-events' );
+                } else {
+                    $target = get_userdata( $target_uid );
+                    if ( ! $target ) {
+                        $users_error = esc_html__( 'Utente non trovato.', 'open-events' );
+                    } elseif ( in_array( 'administrator', (array) $target->roles, true ) ) {
+                        $users_error = esc_html__( 'Non puoi eliminare un altro amministratore.', 'open-events' );
+                    } else {
+                        $deleted_name = $target->display_name;
+                        wp_delete_user( $target_uid, $current_user_id );
+                        $users_notice = sprintf( esc_html__( 'Utente %s eliminato; i suoi contenuti sono stati riassegnati al tuo account.', 'open-events' ), $deleted_name );
+                    }
+                }
+            }
+
+            $all_users = get_users( [ 'orderby' => 'registered', 'order' => 'DESC' ] );
+            $date_format = get_option( 'date_format' );
+            ?>
+            <div class="em-form-container em-dashboard-view em-users-view">
+                <?php $this->render_breadcrumbs( [
+                    [ 'label' => esc_html__( 'Dashboard', 'open-events' ), 'url' => remove_query_arg( [ 'view', 'oe_user_action', 'user_id', '_wpnonce' ] ) ],
+                    [ 'label' => esc_html__( 'Utenti', 'open-events' ), 'url' => '' ],
+                ] ); ?>
+
+                <div class="em-back-link">
+                    <a href="<?php echo esc_url( remove_query_arg( [ 'view', 'oe_user_action', 'user_id', '_wpnonce' ] ) ); ?>">&larr; <?php esc_html_e( 'Torna alla Dashboard', 'open-events' ); ?></a>
+                </div>
+
+                <div class="em-dashboard-header">
+                    <h2><?php $this->render_icon( 'users' ); ?> <?php esc_html_e( 'Utenti iscritti', 'open-events' ); ?> <span class="em-count-badge"><?php echo count( $all_users ); ?></span></h2>
+                </div>
+
+                <?php if ( $users_notice ) : ?>
+                    <div class="em-alert success"><?php echo esc_html( $users_notice ); ?></div>
+                <?php endif; ?>
+                <?php if ( $users_error ) : ?>
+                    <div class="em-alert error"><?php echo esc_html( $users_error ); ?></div>
+                <?php endif; ?>
+
+                <div class="em-items-list em-users-list">
+                    <?php foreach ( $all_users as $u ) :
+                        $u_roles = (array) $u->roles;
+                        $primary_role = $u_roles[0] ?? '';
+                        $role_label = isset( $editable_roles[ $primary_role ] ) ? translate_user_role( $editable_roles[ $primary_role ]['name'] ) : $primary_role;
+                        $event_count = count_user_posts( $u->ID, 'tribe_events' );
+                        $is_self = ( $u->ID === $current_user_id );
+                        $is_admin_user = in_array( 'administrator', $u_roles, true );
+                        $edit_link = admin_url( 'user-edit.php?user_id=' . $u->ID );
+                        $delete_url = wp_nonce_url(
+                            add_query_arg( [ 'oe_user_action' => 'delete', 'user_id' => $u->ID ], remove_query_arg( [ 'oe_user_action', 'user_id', '_wpnonce' ] ) ),
+                            'oe_user_delete_' . $u->ID
+                        );
+                        ?>
+                        <div class="em-item-row em-user-row">
+                            <span class="em-item-thumb em-user-avatar"><?php echo get_avatar( $u->ID, 44 ); ?></span>
+                            <div class="em-item-info">
+                                <strong class="em-item-title">
+                                    <?php echo esc_html( $u->display_name ); ?>
+                                    <span class="em-user-login">@<?php echo esc_html( $u->user_login ); ?></span>
+                                    <?php if ( $is_self ) : ?>
+                                        <span class="em-featured-badge"><?php esc_html_e( 'Tu', 'open-events' ); ?></span>
+                                    <?php endif; ?>
+                                </strong>
+                                <span class="em-item-meta">
+                                    <a href="mailto:<?php echo esc_attr( $u->user_email ); ?>"><?php echo esc_html( $u->user_email ); ?></a>
+                                    · <?php echo esc_html( $role_label ); ?>
+                                    · <?php printf( esc_html__( 'iscritto il %s', 'open-events' ), esc_html( date_i18n( $date_format, strtotime( $u->user_registered ) ) ) ); ?>
+                                    · <?php printf( esc_html( _n( '%d evento', '%d eventi', (int) $event_count, 'open-events' ) ), (int) $event_count ); ?>
+                                </span>
+                            </div>
+
+                            <?php // Cambio ruolo (bloccato per se stessi e per l'ultimo admin)
+                            $lock_role = $is_self || ( $is_admin_user && $admin_count <= 1 );
+                            ?>
+                            <form method="post" class="em-user-role-form">
+                                <?php wp_nonce_field( 'oe_user_role', 'oe_user_role_nonce' ); ?>
+                                <input type="hidden" name="oe_user_id" value="<?php echo esc_attr( $u->ID ); ?>">
+                                <select name="oe_user_role" class="em-user-role-select" <?php disabled( $lock_role ); ?> aria-label="<?php esc_attr_e( 'Ruolo utente', 'open-events' ); ?>">
+                                    <?php foreach ( $editable_roles as $role_key => $role_data ) : ?>
+                                        <option value="<?php echo esc_attr( $role_key ); ?>" <?php selected( $primary_role, $role_key ); ?>>
+                                            <?php echo esc_html( translate_user_role( $role_data['name'] ) ); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <?php if ( ! $lock_role ) : ?>
+                                    <button type="submit" name="oe_user_role_submit" value="1" class="em-action-btn" title="<?php esc_attr_e( 'Salva ruolo', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Salva ruolo', 'open-events' ); ?>">
+                                        <?php $this->render_icon( 'check' ); ?>
+                                    </button>
+                                <?php endif; ?>
+                            </form>
+
+                            <a href="<?php echo esc_url( $edit_link ); ?>" class="em-action-btn edit-btn" target="_blank" rel="noopener noreferrer" title="<?php esc_attr_e( 'Modifica in wp-admin', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Modifica in wp-admin', 'open-events' ); ?>">
+                                <?php $this->render_icon( 'edit' ); ?>
+                            </a>
+
+                            <?php if ( ! $is_self && ! $is_admin_user ) : ?>
+                                <a href="<?php echo esc_url( $delete_url ); ?>" class="em-action-btn delete-btn" onclick="return confirm('<?php echo esc_js( __( 'Eliminare questo utente? I suoi eventi/luoghi/organizzatori verranno riassegnati al tuo account. Operazione non annullabile.', 'open-events' ) ); ?>');" title="<?php esc_attr_e( 'Elimina utente', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Elimina utente', 'open-events' ); ?>">
+                                    <?php $this->render_icon( 'trash' ); ?>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php
+            if ( $show_sidebar ) {
+                echo '</div></div>';
+            }
+            return;
+        }
+
         // Handle Portal Hub Home
         if ( 'hub' === $action_mode && empty( $post_type ) ) {
             ?>
@@ -591,8 +759,20 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                         <span class="em-card-btn"><?php esc_html_e( 'Accedi', 'open-events' ); ?> &rarr;</span>
                     </a>
 
+                    <?php if ( $is_admin_view ) : ?>
+                        <!-- Utenti (solo admin) -->
+                        <a href="<?php echo esc_url( add_query_arg( 'view', 'users' ) ); ?>" class="em-hub-card em-users-card">
+                            <div class="em-card-icon">
+                                <?php $this->render_icon( 'users' ); ?>
+                            </div>
+                            <h4><?php esc_html_e( 'Utenti', 'open-events' ); ?></h4>
+                            <p><?php esc_html_e( 'Vedi tutti gli utenti iscritti, cambia il loro ruolo o eliminali.', 'open-events' ); ?></p>
+                            <span class="em-card-btn"><?php esc_html_e( 'Accedi', 'open-events' ); ?> &rarr;</span>
+                        </a>
+                    <?php endif; ?>
+
                     <?php if ( ! empty( $settings['custom_buttons'] ) ) : ?>
-                        <?php foreach ( $settings['custom_buttons'] as $item ) : 
+                        <?php foreach ( $settings['custom_buttons'] as $item ) :
                             $target = $item['button_link']['is_external'] ? ' target="_blank"' : '';
                             $nofollow = $item['button_link']['nofollow'] ? ' rel="nofollow"' : '';
                             ?>
@@ -1063,7 +1243,14 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
         }
 
         $categories = get_terms( [ 'taxonomy' => 'tribe_events_cat', 'hide_empty' => false ] );
-        $venues = get_posts( [ 'post_type' => 'tribe_venue', 'posts_per_page' => -1, 'post_status' => 'publish' ] );
+        $venue_query_args = [ 'post_type' => 'tribe_venue', 'posts_per_page' => -1, 'post_status' => 'publish', 'orderby' => 'title', 'order' => 'ASC' ];
+        // Opzione "Visibilità luoghi": se impostata su "solo i propri", l'utente
+        // normale vede nel menu solo i luoghi che ha inserito lui. L'admin vede
+        // sempre tutti i luoghi.
+        if ( ! $is_admin_view && 'own' === open_events_get_venue_visibility() ) {
+            $venue_query_args['author'] = $current_user_id;
+        }
+        $venues = get_posts( $venue_query_args );
         $organizers = get_posts( [ 'post_type' => 'tribe_organizer', 'posts_per_page' => -1, 'post_status' => 'publish', 'author' => $current_user_id ] );
 
         $form_list_url = remove_query_arg( [ 'edit_id', 'action', 'type' ] );
@@ -1113,17 +1300,20 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     
                     <div class="em-form-group">
                         <label>
-                            <?php 
+                            <?php
                             if ( 'tribe_events' === $post_type ) {
                                 esc_html_e( 'Titolo Evento *', 'open-events' );
+                                $title_placeholder = __( 'Es. Concerto sotto le stelle, Aperitivo al Castello...', 'open-events' );
                             } elseif ( 'tribe_organizer' === $post_type ) {
                                 esc_html_e( 'Nome Organizzatore *', 'open-events' );
+                                $title_placeholder = __( 'Es. Pro Loco, Associazione, Comune...', 'open-events' );
                             } else {
                                 esc_html_e( 'Nome Luogo *', 'open-events' );
+                                $title_placeholder = __( 'Es. Comune Iseo, Campo Sportivo di, Chiesa di...', 'open-events' );
                             }
                             ?>
                         </label>
-                        <input type="text" name="post_title" required value="<?php echo esc_attr( $edit_post ? $edit_post->post_title : '' ); ?>" placeholder="<?php esc_attr_e( 'Es. Concerto sotto le stelle, Aperitivo al Castello...', 'open-events' ); ?>">
+                        <input type="text" name="post_title" required value="<?php echo esc_attr( $edit_post ? $edit_post->post_title : '' ); ?>" placeholder="<?php echo esc_attr( $title_placeholder ); ?>">
                     </div>
 
                     <?php if ( 'tribe_events' === $post_type && $is_admin_view ):
@@ -1336,13 +1526,33 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                                 <select name="event_venue" class="em-form-select em-venue-select">
                                     <option value=""><?php esc_html_e( '-- Scegli un Luogo --', 'open-events' ); ?></option>
                                     <option value="__create_new__"><?php esc_html_e( '+ Crea Nuovo Luogo...', 'open-events' ); ?></option>
-                                    <?php 
+                                    <?php
                                     $current_venue = $edit_post ? get_post_meta( $edit_post->ID, '_EventVenueID', true ) : '';
-                                    foreach ( $venues as $v ): ?>
-                                        <option value="<?php echo esc_attr( $v->ID ); ?>" <?php selected( $current_venue, $v->ID ); ?>>
-                                            <?php echo esc_html( $v->post_title ); ?>
-                                        </option>
-                                    <?php endforeach; ?>
+                                    // Prima i luoghi inseriti dall'utente stesso, poi tutti gli altri.
+                                    $own_venues   = [];
+                                    $other_venues = [];
+                                    foreach ( $venues as $v ) {
+                                        if ( (int) $v->post_author === (int) $current_user_id ) {
+                                            $own_venues[] = $v;
+                                        } else {
+                                            $other_venues[] = $v;
+                                        }
+                                    }
+                                    ?>
+                                    <?php if ( $own_venues ) : ?>
+                                        <optgroup label="<?php esc_attr_e( 'I tuoi luoghi', 'open-events' ); ?>">
+                                            <?php foreach ( $own_venues as $v ) : ?>
+                                                <option value="<?php echo esc_attr( $v->ID ); ?>" <?php selected( $current_venue, $v->ID ); ?>><?php echo esc_html( $v->post_title ); ?></option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                    <?php endif; ?>
+                                    <?php if ( $other_venues ) : ?>
+                                        <optgroup label="<?php esc_attr_e( 'Altri luoghi', 'open-events' ); ?>">
+                                            <?php foreach ( $other_venues as $v ) : ?>
+                                                <option value="<?php echo esc_attr( $v->ID ); ?>" <?php selected( $current_venue, $v->ID ); ?>><?php echo esc_html( $v->post_title ); ?></option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                    <?php endif; ?>
                                 </select>
 
                                 <div class="em-inline-creator em-hidden" id="em-inline-venue-creator">

@@ -4,7 +4,7 @@ Tags: events, elementor, the-events-calendar, front-end submission
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,12 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * I nuovi eventi vengono salvati come "in attesa di revisione" (pending) cosi' un amministratore puo' approvarli prima della pubblicazione; luoghi e organizzatori restano in bozza.
 
 == Changelog ==
+
+= 1.0.9 =
+* Nuovo: sezione "Utenti" nel portale, riservata agli amministratori — voce nella barra laterale e scheda nella bacheca — per vedere tutti gli utenti iscritti (con email, ruolo, data di iscrizione e numero di eventi creati), cambiarne il ruolo, aprirli in wp-admin o eliminarli (i loro eventi/luoghi/organizzatori vengono riassegnati all'amministratore). Sono presenti protezioni: non è possibile modificare/eliminare il proprio account, eliminare altri amministratori o rimuovere l'ultimo amministratore.
+* Nuovo: opzione "Visibilità luoghi nel form evento" nelle Impostazioni — permette di mostrare all'utente tutti i luoghi (predefinito) oppure solo quelli che ha inserito lui. Gli amministratori vedono comunque tutti i luoghi.
+* Miglioramento: nel form evento, il menu "Seleziona Luogo" ora raggruppa in cima i luoghi inseriti dall'utente ("I tuoi luoghi") e sotto tutti gli altri ("Altri luoghi"), in ordine alfabetico.
+* Miglioramento: i testi di esempio (placeholder) del campo nome sono ora specifici per tipo — Luogo ("Es. Comune Iseo, Campo Sportivo di, Chiesa di...") e Organizzatore ("Es. Pro Loco, Associazione, Comune...") — invece di mostrare sempre un esempio riferito agli eventi.
 
 = 1.0.8 =
 * Fix: gli eventi salvati o pubblicati dal portale front-end restavano invisibili nel calendario pubblico con The Events Calendar 6+ (custom tables). Il widget scriveva solo le date locali, ma TEC 6 per generare l'occorrenza pretende anche i meta UTC/timezone/durata: senza, non veniva creata alcuna occorrenza e l'evento non compariva mai, pur risultando "pubblicato". Ora il plugin calcola quei meta e forza TEC a ricostruire subito evento e occorrenze, sia al salvataggio sia dal pulsante "Pubblica" (che ripara anche gli eventi creati prima di questa fix).
