@@ -389,17 +389,17 @@ select.oes-input {
     height: 52px;
 }
 
-/* Gradient scuro in basso — esteso per coprire il badge data + titolo */
+/* Gradient scuro solo nella fascia bassa (comune + titolo), trasparente sopra */
 .oes-card::after {
     content: '';
     position: absolute;
     inset: 0;
     background: linear-gradient(
         to top,
-        rgba(10, 12, 18, .97) 0%,
-        rgba(10, 12, 18, .92) 22%,
-        rgba(10, 12, 18, .60) 50%,
-        transparent 72%
+        rgba(10, 12, 18, .96) 0%,
+        rgba(10, 12, 18, .86) 20%,
+        rgba(10, 12, 18, .10) 32%,
+        transparent 40%
     );
     pointer-events: none;
 }
