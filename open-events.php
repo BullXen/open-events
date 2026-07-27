@@ -3,7 +3,7 @@
 Plugin Name: Open Events
 Plugin URI: https://github.com/BullXen/open-events
 Description: Plugin per la gestione di eventi. Aggiunge a Elementor un widget che permette agli utenti loggati di gestire da front-end eventi, luoghi e organizzatori (The Events Calendar) come un portale.
-Version: 1.0.9
+Version: 1.1.0
 Author: BullXen
 GitHub Plugin URI: BullXen/open-events
 Primary Branch: main
@@ -14,13 +14,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OPEN_EVENTS_VERSION', '1.0.9' );
+define( 'OPEN_EVENTS_VERSION', '1.1.0' );
 define( 'OPEN_EVENTS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OPEN_EVENTS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 // Richiesto sempre (non solo in admin): il widget front-end legge
 // open_events_get_default_event_status() quando un utente salva un evento.
 require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/admin-settings.php';
+
+// Richiesto sempre: registra gli handler AJAX della Ricerca Eventi, che
+// vengono serviti da admin-ajax.php (dove il widget Elementor non è caricato).
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/events-search.php';
 
 /**
  * Porta in cima gli eventi "in primo piano" (_tribe_featured) anche nel
@@ -171,6 +175,9 @@ function open_events_register_category( $elements_manager ) {
 function open_events_register_widgets( $widgets_manager ) {
 	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/class-widget-events-manager.php';
 	$widgets_manager->register( new \OpenEvents\Widget_Events_Manager() );
+
+	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/class-widget-events-search.php';
+	$widgets_manager->register( new \OpenEvents\Widget_Events_Search() );
 }
 
 function open_events_register_assets() {
@@ -186,6 +193,29 @@ function open_events_register_assets() {
 		[ 'jquery', 'elementor-frontend' ],
 		OPEN_EVENTS_VERSION,
 		true
+	);
+
+	// Ricerca Eventi: stile + script della barra di ricerca live.
+	wp_register_style(
+		'open-events-search-style',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/css/events-search.css',
+		[],
+		OPEN_EVENTS_VERSION
+	);
+	wp_register_script(
+		'open-events-search-script',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/js/events-search.js',
+		[ 'jquery', 'elementor-frontend' ],
+		OPEN_EVENTS_VERSION,
+		true
+	);
+	wp_localize_script(
+		'open-events-search-script',
+		'openEventsSearch',
+		[
+			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+			'nonce'   => wp_create_nonce( 'open_events_search' ),
+		]
 	);
 }
 
