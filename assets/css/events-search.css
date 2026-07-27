@@ -150,124 +150,159 @@ select.oes-input {
     gap: 20px;
 }
 
-/* --- Card --- */
+/* --- Card (immagine full-cover + overlay gradient) --- */
 .oes-card {
-    display: flex;
-    flex-direction: column;
-    background: var(--oes-bg);
-    border: 1px solid var(--oes-border);
+    position: relative;
+    display: block;
+    aspect-ratio: 3 / 4;
     border-radius: var(--oes-radius);
     overflow: hidden;
     text-decoration: none;
-    color: inherit;
+    color: #fff;
+    background: #1a1d23;
     box-shadow: var(--oes-shadow);
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    transition: transform .2s ease, box-shadow .2s ease;
 }
 
 .oes-card:hover {
-    transform: translateY(-3px);
-    border-color: color-mix(in srgb, var(--oes-accent) 40%, var(--oes-border));
-    box-shadow: 0 8px 28px rgba(16, 24, 40, .12);
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 16px 40px rgba(16, 24, 40, .22);
 }
 
 .oes-card.is-featured {
-    border-color: #fcd34d;
-    box-shadow: 0 0 0 1px #fcd34d, var(--oes-shadow);
+    box-shadow: 0 0 0 2px #fcd34d, 0 8px 28px rgba(16, 24, 40, .18);
 }
 
-.oes-card-media {
-    position: relative;
-    aspect-ratio: 16 / 10;
-    background: #f3f4f6;
-}
-
-.oes-card-media img {
+/* Immagine: copre tutto il box */
+.oes-card-bg {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    transition: transform .35s ease;
 }
 
-.oes-card-media-placeholder {
+.oes-card:hover .oes-card-bg {
+    transform: scale(1.04);
+}
+
+/* Placeholder senza immagine */
+.oes-card-bg-empty {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    height: 100%;
-    color: #cbd0d8;
+    background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+    color: rgba(255,255,255,.18);
 }
 
-.oes-card-media-placeholder svg {
-    width: 44px;
-    height: 44px;
+.oes-card-bg-empty svg {
+    width: 52px;
+    height: 52px;
+}
+
+/* Gradient scuro dal basso — dove vivono titolo e dati */
+.oes-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to top,
+        rgba(10, 12, 18, .92) 0%,
+        rgba(10, 12, 18, .55) 45%,
+        rgba(10, 12, 18, .08) 70%,
+        transparent 100%
+    );
+    pointer-events: none;
+}
+
+/* Badge in cima (categoria + featured) */
+.oes-card-badges {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    z-index: 2;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    flex-wrap: wrap;
 }
 
 .oes-card-cat {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    padding: 4px 10px;
-    font-size: 12px;
-    font-weight: 600;
+    padding: 4px 11px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
     color: #fff;
-    background: rgba(17, 24, 39, .72);
-    backdrop-filter: blur(4px);
+    background: color-mix(in srgb, var(--oes-accent) 85%, transparent);
+    backdrop-filter: blur(6px);
     border-radius: 999px;
 }
 
 .oes-card-featured {
-    position: absolute;
-    top: 12px;
-    right: 12px;
+    margin-left: auto;
     display: inline-flex;
     align-items: center;
     gap: 4px;
     padding: 4px 10px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
-    color: #b45309;
+    color: #92400e;
     background: #fef3c7;
     border-radius: 999px;
 }
 
 .oes-card-featured svg {
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
 }
 
+/* Corpo testo in basso, sopra il gradient */
 .oes-card-body {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    padding: 20px 18px 18px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 16px;
+    gap: 5px;
 }
 
 .oes-card-date {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
-    color: var(--oes-accent);
+    letter-spacing: .03em;
     text-transform: capitalize;
+    color: rgba(255, 255, 255, .75);
 }
 
 .oes-card-title {
     margin: 0;
-    font-size: 17px;
-    line-height: 1.35;
+    font-size: 18px;
+    line-height: 1.3;
     font-weight: 700;
-    color: var(--oes-text);
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0,0,0,.4);
 }
 
 .oes-card-place {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    font-size: 13px;
-    color: var(--oes-muted);
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, .65);
+    margin-top: 2px;
 }
 
 .oes-card-place svg {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
     flex-shrink: 0;
 }
 
