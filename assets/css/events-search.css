@@ -389,17 +389,17 @@ select.oes-input {
     height: 52px;
 }
 
-/* Gradient scuro solo in basso dove vivono titolo e dati */
+/* Gradient scuro in basso — esteso per coprire il badge data + titolo */
 .oes-card::after {
     content: '';
     position: absolute;
     inset: 0;
     background: linear-gradient(
         to top,
-        rgba(10, 12, 18, .96) 0%,
-        rgba(10, 12, 18, .88) 20%,
-        rgba(10, 12, 18, .40) 42%,
-        transparent 60%
+        rgba(10, 12, 18, .97) 0%,
+        rgba(10, 12, 18, .92) 22%,
+        rgba(10, 12, 18, .60) 50%,
+        transparent 72%
     );
     pointer-events: none;
 }
@@ -460,22 +460,57 @@ select.oes-input {
     gap: 5px;
 }
 
-.oes-card-date {
+/* --- Badge data: tessera mese / numero / giorno settimana --- */
+.oes-card-date-badge {
     display: inline-flex;
+    flex-direction: column;
     align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: .03em;
-    text-transform: capitalize;
-    color: rgba(255, 255, 255, .80);
+    align-self: flex-start;
+    background: rgba(255, 255, 255, .13);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px;
+    padding: 7px 13px 8px;
+    min-width: 56px;
+    gap: 1px;
 }
 
-.oes-card-date-icon {
-    width: 13px;
-    height: 13px;
-    flex-shrink: 0;
-    opacity: .9;
+.oes-card-date-month {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    color: rgba(255, 255, 255, .65);
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.oes-card-date-day {
+    font-size: 34px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    margin: 3px 0 4px;
+}
+
+.oes-card-date-dow {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: #fff;
+    background: var(--oes-accent);
+    padding: 3px 10px;
+    border-radius: 999px;
+    line-height: 1.4;
+    text-transform: uppercase;
+}
+
+.oes-card-date-time {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, .60);
+    margin-top: 5px;
+    line-height: 1;
 }
 
 .oes-card-title {

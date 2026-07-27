@@ -312,14 +312,18 @@ function open_events_search_render_card( $event_id ) {
 	$thumb     = get_the_post_thumbnail_url( $event_id, 'medium_large' );
 	$featured  = '1' === get_post_meta( $event_id, '_tribe_featured', true );
 
-	$start = get_post_meta( $event_id, '_EventStartDate', true );
+	$start   = get_post_meta( $event_id, '_EventStartDate', true );
 	$all_day = '1' === (string) get_post_meta( $event_id, '_EventAllDay', true );
-	$date_display = '';
+	$date_day   = '';
+	$date_month = '';
+	$date_dow   = '';
+	$date_time  = '';
 	if ( $start ) {
-		$start_ts = strtotime( $start );
-		$date_display = $all_day
-			? date_i18n( 'D j M', $start_ts )
-			: date_i18n( 'D j M · H:i', $start_ts );
+		$start_ts   = strtotime( $start );
+		$date_day   = date_i18n( 'd', $start_ts );
+		$date_month = strtoupper( date_i18n( 'M', $start_ts ) );
+		$date_dow   = strtoupper( date_i18n( 'D', $start_ts ) );
+		$date_time  = $all_day ? '' : date_i18n( 'H:i', $start_ts );
 	}
 
 	// Comune dal luogo collegato.
@@ -362,11 +366,15 @@ function open_events_search_render_card( $event_id ) {
 		</div>
 
 		<div class="oes-card-body">
-			<?php if ( $date_display ) : ?>
-				<span class="oes-card-date">
-					<svg class="oes-card-date-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
-					<?php echo esc_html( $date_display ); ?>
-				</span>
+			<?php if ( $date_day ) : ?>
+				<div class="oes-card-date-badge">
+					<span class="oes-card-date-month"><?php echo esc_html( $date_month ); ?></span>
+					<span class="oes-card-date-day"><?php echo esc_html( $date_day ); ?></span>
+					<span class="oes-card-date-dow"><?php echo esc_html( $date_dow ); ?></span>
+					<?php if ( $date_time ) : ?>
+						<span class="oes-card-date-time"><?php echo esc_html( $date_time ); ?></span>
+					<?php endif; ?>
+				</div>
 			<?php endif; ?>
 			<h3 class="oes-card-title"><?php echo esc_html( $title ); ?></h3>
 			<?php if ( $comune ) : ?>
