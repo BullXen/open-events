@@ -37,18 +37,22 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 	}
 
 	protected function register_controls() {
+
+		// =====================================================================
+		// TAB CONTENUTO — Sezione: Barra di Ricerca
+		// =====================================================================
 		$this->start_controls_section(
-			'section_config',
+			'section_search_bar',
 			[
-				'label' => esc_html__( 'Configurazione', 'open-events' ),
+				'label' => esc_html__( 'Barra di Ricerca', 'open-events' ),
 				'tab'   => \Elementor\Controls_Manager::TAB_CONTENT,
 			]
 		);
 
 		$this->add_control(
-			'show_text',
+			'show_bar',
 			[
-				'label'        => esc_html__( 'Mostra campo di ricerca testo', 'open-events' ),
+				'label'        => esc_html__( 'Mostra barra di ricerca', 'open-events' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
 				'default'      => 'yes',
 				'label_on'     => esc_html__( 'Sì', 'open-events' ),
@@ -58,12 +62,26 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 		);
 
 		$this->add_control(
+			'show_text',
+			[
+				'label'        => esc_html__( 'Mostra campo ricerca testo', 'open-events' ),
+				'type'         => \Elementor\Controls_Manager::SWITCHER,
+				'default'      => 'yes',
+				'label_on'     => esc_html__( 'Sì', 'open-events' ),
+				'label_off'    => esc_html__( 'No', 'open-events' ),
+				'return_value' => 'yes',
+				'separator'    => 'before',
+				'condition'    => [ 'show_bar' => 'yes' ],
+			]
+		);
+
+		$this->add_control(
 			'text_placeholder',
 			[
 				'label'     => esc_html__( 'Testo segnaposto ricerca', 'open-events' ),
 				'type'      => \Elementor\Controls_Manager::TEXT,
 				'default'   => esc_html__( 'Cerca un evento…', 'open-events' ),
-				'condition' => [ 'show_text' => 'yes' ],
+				'condition' => [ 'show_bar' => 'yes', 'show_text' => 'yes' ],
 			]
 		);
 
@@ -77,6 +95,7 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 				'label_off'    => esc_html__( 'No', 'open-events' ),
 				'return_value' => 'yes',
 				'separator'    => 'before',
+				'condition'    => [ 'show_bar' => 'yes' ],
 			]
 		);
 
@@ -89,6 +108,7 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 				'label_on'     => esc_html__( 'Sì', 'open-events' ),
 				'label_off'    => esc_html__( 'No', 'open-events' ),
 				'return_value' => 'yes',
+				'condition'    => [ 'show_bar' => 'yes' ],
 			]
 		);
 
@@ -101,12 +121,77 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 				'label_on'     => esc_html__( 'Sì', 'open-events' ),
 				'label_off'    => esc_html__( 'No', 'open-events' ),
 				'return_value' => 'yes',
+				'condition'    => [ 'show_bar' => 'yes' ],
 			]
 		);
 
 		$this->end_controls_section();
 
-		// --- Stile: Barra di Ricerca ---
+		// =====================================================================
+		// TAB CONTENUTO — Sezione: Layout
+		// =====================================================================
+		$this->start_controls_section(
+			'section_layout',
+			[
+				'label' => esc_html__( 'Layout', 'open-events' ),
+				'tab'   => \Elementor\Controls_Manager::TAB_CONTENT,
+			]
+		);
+
+		$this->add_responsive_control(
+			'columns',
+			[
+				'label'     => esc_html__( 'Colonne griglia', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::SELECT,
+				'default'   => '3',
+				'options'   => [
+					'1' => '1',
+					'2' => '2',
+					'3' => '3',
+					'4' => '4',
+				],
+				'selectors' => [
+					'{{WRAPPER}} .oes-grid' => 'grid-template-columns: repeat({{VALUE}}, minmax(0, 1fr));',
+				],
+			]
+		);
+
+		$this->add_control(
+			'card_aspect_ratio',
+			[
+				'label'     => esc_html__( 'Proporzioni scheda', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::SELECT,
+				'default'   => '3/4',
+				'options'   => [
+					'3/4'  => esc_html__( 'Verticale (3:4)', 'open-events' ),
+					'1/1'  => esc_html__( 'Quadrata (1:1)', 'open-events' ),
+					'4/3'  => esc_html__( 'Orizzontale (4:3)', 'open-events' ),
+					'16/9' => esc_html__( 'Panoramica (16:9)', 'open-events' ),
+				],
+				'selectors' => [
+					'{{WRAPPER}} .oes-card' => 'aspect-ratio: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'max_events',
+			[
+				'label'       => esc_html__( 'Numero massimo eventi', 'open-events' ),
+				'description' => esc_html__( '0 = mostra tutti (fino a 48).', 'open-events' ),
+				'type'        => \Elementor\Controls_Manager::NUMBER,
+				'default'     => 0,
+				'min'         => 0,
+				'max'         => 200,
+				'separator'   => 'before',
+			]
+		);
+
+		$this->end_controls_section();
+
+		// =====================================================================
+		// TAB STILE — Sezione: Barra di Ricerca
+		// =====================================================================
 		$this->start_controls_section(
 			'section_style_bar',
 			[
@@ -118,10 +203,10 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 		$this->add_control(
 			'accent_color',
 			[
-				'label'     => esc_html__( 'Colore principale (accent)', 'open-events' ),
-				'description' => esc_html__( 'Usato per chip attivo, badge categoria e focus dei campi.', 'open-events' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => [
+				'label'       => esc_html__( 'Colore principale (accent)', 'open-events' ),
+				'description' => esc_html__( 'Chip attivo, badge categoria, focus campi.', 'open-events' ),
+				'type'        => \Elementor\Controls_Manager::COLOR,
+				'selectors'   => [
 					'{{WRAPPER}} .oes-search' => '--oes-accent: {{VALUE}};',
 				],
 			]
@@ -198,30 +283,14 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 
 		$this->end_controls_section();
 
-		// --- Stile: Schede Evento ---
+		// =====================================================================
+		// TAB STILE — Sezione: Schede Evento
+		// =====================================================================
 		$this->start_controls_section(
 			'section_style_cards',
 			[
 				'label' => esc_html__( 'Schede Evento', 'open-events' ),
 				'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
-			]
-		);
-
-		$this->add_responsive_control(
-			'columns',
-			[
-				'label'     => esc_html__( 'Colonne griglia', 'open-events' ),
-				'type'      => \Elementor\Controls_Manager::SELECT,
-				'default'   => '3',
-				'options'   => [
-					'1' => '1',
-					'2' => '2',
-					'3' => '3',
-					'4' => '4',
-				],
-				'selectors' => [
-					'{{WRAPPER}} .oes-grid' => 'grid-template-columns: repeat({{VALUE}}, minmax(0, 1fr));',
-				],
 			]
 		);
 
@@ -235,24 +304,6 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 				'default'    => [ 'size' => 5, 'unit' => 'px' ],
 				'selectors'  => [
 					'{{WRAPPER}} .oes-grid' => 'gap: {{SIZE}}{{UNIT}};',
-				],
-			]
-		);
-
-		$this->add_control(
-			'card_aspect_ratio',
-			[
-				'label'     => esc_html__( 'Proporzioni scheda', 'open-events' ),
-				'type'      => \Elementor\Controls_Manager::SELECT,
-				'default'   => '3/4',
-				'options'   => [
-					'3/4'  => esc_html__( 'Verticale (3:4)', 'open-events' ),
-					'1/1'  => esc_html__( 'Quadrata (1:1)', 'open-events' ),
-					'4/3'  => esc_html__( 'Orizzontale (4:3)', 'open-events' ),
-					'16/9' => esc_html__( 'Panoramica (16:9)', 'open-events' ),
-				],
-				'selectors' => [
-					'{{WRAPPER}} .oes-card' => 'aspect-ratio: {{VALUE}};',
 				],
 			]
 		);
@@ -276,22 +327,24 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 
 	protected function render() {
 		$settings         = $this->get_settings_for_display();
+		$show_bar         = ( 'yes' === ( $settings['show_bar']         ?? 'yes' ) );
 		$show_text        = ( 'yes' === ( $settings['show_text']        ?? 'yes' ) );
 		$show_comune      = ( 'yes' === ( $settings['show_comune']      ?? 'yes' ) );
 		$show_category    = ( 'yes' === ( $settings['show_category']    ?? 'yes' ) );
 		$show_date_picker = ( 'yes' === ( $settings['show_date_picker'] ?? 'yes' ) );
 		$placeholder      = $settings['text_placeholder'] ?? esc_html__( 'Cerca un evento…', 'open-events' );
+		$max_events       = max( 0, intval( $settings['max_events'] ?? 0 ) );
 
-		$cities     = open_events_get_available_cities();
-		$categories = open_events_search_get_categories();
+		$cities     = open_events_search_get_active_cities();
+		$categories = open_events_search_get_active_categories();
 
-		// Risultati iniziali (prossimi eventi) resi lato server: la barra
-		// funziona anche senza JavaScript e non parte da vuota.
 		$initial_html = open_events_search_render_results(
-			open_events_search_normalize_filters( [ 'date_mode' => 'upcoming' ] )
+			open_events_search_normalize_filters( [ 'date_mode' => 'upcoming', 'max_events' => $max_events ] )
 		);
 		?>
 		<div class="oes-search">
+
+			<?php if ( $show_bar ) : ?>
 			<form class="oes-search-bar" role="search" onsubmit="return false;">
 				<?php if ( $show_text ) : ?>
 					<div class="oes-field oes-field-text">
@@ -342,8 +395,11 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 				<button type="button" class="oes-chip" data-date-mode="month"><?php esc_html_e( 'Questo mese', 'open-events' ); ?></button>
 				<button type="button" class="oes-reset" hidden><?php esc_html_e( 'Azzera filtri', 'open-events' ); ?></button>
 			</div>
+			<?php endif; ?>
 
-			<div class="oes-results" aria-live="polite" data-loading="<?php esc_attr_e( 'Caricamento…', 'open-events' ); ?>">
+			<div class="oes-results" aria-live="polite"
+				data-max-events="<?php echo esc_attr( $max_events ); ?>"
+				data-loading="<?php esc_attr_e( 'Caricamento…', 'open-events' ); ?>">
 				<?php echo $initial_html; // già sanificato in open_events_search_render_results() ?>
 			</div>
 		</div>

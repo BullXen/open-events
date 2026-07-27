@@ -67,11 +67,15 @@ class OesDatePicker {
         this.$dp = null;
         this.$trigger.removeClass('is-open').attr('aria-expanded', 'false');
         jQuery(document).off('click.oes-dp', this._outsideHandler);
+        // Selezione parziale (solo from scelto): cancella silenziosamente
+        // senza scatenare una ricerca con dati incompleti.
         if (this.pickStep === 1) {
+            this.dateFrom = null;
             this.dateTo   = null;
             this.pickStep = 0;
-            this._updateLabel();
-            this.onChange();
+            this.hover    = null;
+            this.$trigger.removeClass('has-value');
+            this.$label.text(this.$label.data('placeholder') || 'Qualsiasi data');
         }
     }
 
@@ -281,6 +285,7 @@ class OpenEventsSearchHandler extends elementorModules.frontend.handlers.Base {
         this.debounceTimer = null;
         this.xhr           = null;
         this.dp            = null;
+        this.maxEvents     = parseInt(this.elements.$results.data('maxEvents') || '0', 10);
 
         this.elements.$text.on('input', () => this.debouncedSearch());
         this.elements.$comune.on('change', () => this.runSearch());
@@ -356,12 +361,13 @@ class OpenEventsSearchHandler extends elementorModules.frontend.handlers.Base {
         if (this.xhr) this.xhr.abort();
 
         const data = {
-            action:    'open_events_search',
-            nonce:     openEventsSearch.nonce,
-            text:      (this.elements.$text.val() || '').trim(),
-            comune:    this.elements.$comune.length ? (this.elements.$comune.val() || '') : '',
-            category:  this.elements.$category.length ? (this.elements.$category.val() || '0') : '0',
-            date_mode: this.dateMode,
+            action:     'open_events_search',
+            nonce:      openEventsSearch.nonce,
+            text:       (this.elements.$text.val() || '').trim(),
+            comune:     this.elements.$comune.length ? (this.elements.$comune.val() || '') : '',
+            category:   this.elements.$category.length ? (this.elements.$category.val() || '0') : '0',
+            date_mode:  this.dateMode,
+            max_events: this.maxEvents,
         };
 
         if (this.dateMode === 'range' && this.dp) {

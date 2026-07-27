@@ -19,25 +19,102 @@ if ( ! defined( 'ABSPATH' ) ) {
 const SEARCH_MAX_RESULTS = 48;
 
 /**
- * Categorie evento (tassonomia di The Events Calendar) disponibili per il
- * menu a tendina. Nasconde le categorie vuote per non offrire filtri che
- * darebbero sempre zero risultati.
+ * Categorie evento con almeno un evento in programma (non terminato).
+ * Mostra solo categorie "vive", non quelle con soli eventi passati.
  */
-function open_events_search_get_categories() {
+function open_events_search_get_active_categories() {
 	if ( ! taxonomy_exists( 'tribe_events_cat' ) ) {
 		return [];
 	}
 
-	$terms = get_terms(
-		[
-			'taxonomy'   => 'tribe_events_cat',
-			'hide_empty' => true,
-			'orderby'    => 'name',
-			'order'      => 'ASC',
-		]
-	);
+	$now = current_time( 'mysql' );
+
+	$upcoming = new \WP_Query( [
+		'post_type'      => 'tribe_events',
+		'post_status'    => 'publish',
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+		'no_found_rows'  => true,
+		'meta_query'     => [
+			[
+				'key'     => '_EventEndDate',
+				'value'   => $now,
+				'compare' => '>=',
+				'type'    => 'DATETIME',
+			],
+		],
+	] );
+
+	if ( empty( $upcoming->posts ) ) {
+		return [];
+	}
+
+	$terms = get_terms( [
+		'taxonomy'   => 'tribe_events_cat',
+		'object_ids' => $upcoming->posts,
+		'orderby'    => 'name',
+		'order'      => 'ASC',
+	] );
 
 	return is_wp_error( $terms ) ? [] : $terms;
+}
+
+/**
+ * Comuni (dalle opzioni plugin) con almeno un evento in programma.
+ * Filtra la lista statica di città configurata in Impostazioni, restituendo
+ * solo quelle che hanno un luogo collegato a un evento futuro.
+ */
+function open_events_search_get_active_cities() {
+	$all_cities = open_events_get_available_cities();
+	if ( empty( $all_cities ) ) {
+		return [];
+	}
+
+	$now    = current_time( 'mysql' );
+	$active = [];
+
+	foreach ( $all_cities as $city ) {
+		$venue_ids = get_posts( [
+			'post_type'      => 'tribe_venue',
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'meta_key'       => '_VenueCity',
+			'meta_value'     => $city,
+		] );
+
+		if ( empty( $venue_ids ) ) {
+			continue;
+		}
+
+		$check = new \WP_Query( [
+			'post_type'      => 'tribe_events',
+			'post_status'    => 'publish',
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			'meta_query'     => [
+				'relation' => 'AND',
+				[
+					'key'     => '_EventEndDate',
+					'value'   => $now,
+					'compare' => '>=',
+					'type'    => 'DATETIME',
+				],
+				[
+					'key'     => '_EventVenueID',
+					'value'   => $venue_ids,
+					'compare' => 'IN',
+				],
+			],
+		] );
+
+		if ( ! empty( $check->posts ) ) {
+			$active[] = $city;
+		}
+	}
+
+	return $active;
 }
 
 /**
@@ -71,13 +148,16 @@ function open_events_search_normalize_filters( array $raw ) {
 		}
 	}
 
+	$max_events = isset( $raw['max_events'] ) ? max( 0, intval( $raw['max_events'] ) ) : 0;
+
 	return [
-		'text'      => $text,
-		'comune'    => $comune,
-		'category'  => $cat,
-		'date_mode' => $date_mode,
-		'date_from' => $date_from,
-		'date_to'   => $date_to,
+		'text'       => $text,
+		'comune'     => $comune,
+		'category'   => $cat,
+		'date_mode'  => $date_mode,
+		'date_from'  => $date_from,
+		'date_to'    => $date_to,
+		'max_events' => $max_events,
 	];
 }
 
@@ -215,7 +295,11 @@ function open_events_search_query( array $filters ) {
 		}
 	);
 
-	return array_slice( $ids, 0, SEARCH_MAX_RESULTS );
+	$limit = ( $filters['max_events'] > 0 )
+		? min( $filters['max_events'], SEARCH_MAX_RESULTS )
+		: SEARCH_MAX_RESULTS;
+
+	return array_slice( $ids, 0, $limit );
 }
 
 /**
