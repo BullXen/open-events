@@ -547,10 +547,12 @@ select.oes-input {
     font-size: 15px;
 }
 
-/* --- Responsive --- */
+/* --- Responsive ---
+   !important necessario perché Elementor genera CSS con specificità più alta
+   ({{WRAPPER}} .oes-grid) che altrimenti vince sulle media query. */
 @media (max-width: 900px) {
     .oes-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
 }
 
@@ -561,7 +563,7 @@ select.oes-input {
     }
 
     .oes-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
     }
 
     .oes-reset {

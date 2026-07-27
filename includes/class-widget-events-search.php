@@ -141,16 +141,18 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 		$this->add_responsive_control(
 			'columns',
 			[
-				'label'     => esc_html__( 'Colonne griglia', 'open-events' ),
-				'type'      => \Elementor\Controls_Manager::SELECT,
-				'default'   => '3',
-				'options'   => [
+				'label'          => esc_html__( 'Colonne griglia', 'open-events' ),
+				'type'           => \Elementor\Controls_Manager::SELECT,
+				'default'        => '3',
+				'tablet_default' => '2',
+				'mobile_default' => '1',
+				'options'        => [
 					'1' => '1',
 					'2' => '2',
 					'3' => '3',
 					'4' => '4',
 				],
-				'selectors' => [
+				'selectors'      => [
 					'{{WRAPPER}} .oes-grid' => 'grid-template-columns: repeat({{VALUE}}, minmax(0, 1fr));',
 				],
 			]
