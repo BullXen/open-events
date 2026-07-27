@@ -69,11 +69,11 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 
 		$this->end_controls_section();
 
-		// Stile: pochi controlli utili, il resto sta nel CSS del plugin.
+		// --- Stile: Barra di Ricerca ---
 		$this->start_controls_section(
-			'section_style',
+			'section_style_bar',
 			[
-				'label' => esc_html__( 'Stile', 'open-events' ),
+				'label' => esc_html__( 'Barra di Ricerca', 'open-events' ),
 				'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
 			]
 		);
@@ -81,11 +81,50 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 		$this->add_control(
 			'accent_color',
 			[
-				'label'     => esc_html__( 'Colore principale', 'open-events' ),
+				'label'     => esc_html__( 'Colore principale (accent)', 'open-events' ),
+				'description' => esc_html__( 'Usato per chip attivo, badge categoria e focus dei campi.', 'open-events' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => [
 					'{{WRAPPER}} .oes-search' => '--oes-accent: {{VALUE}};',
 				],
+			]
+		);
+
+		$this->add_control(
+			'bar_bg_color',
+			[
+				'label'     => esc_html__( 'Sfondo barra', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'default'   => '#ffffff',
+				'selectors' => [
+					'{{WRAPPER}} .oes-search-bar' => 'background: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_responsive_control(
+			'bar_border_radius',
+			[
+				'label'      => esc_html__( 'Angoli arrotondati barra', 'open-events' ),
+				'type'       => \Elementor\Controls_Manager::SLIDER,
+				'size_units' => [ 'px' ],
+				'range'      => [ 'px' => [ 'min' => 0, 'max' => 40 ] ],
+				'default'    => [ 'size' => 14, 'unit' => 'px' ],
+				'selectors'  => [
+					'{{WRAPPER}} .oes-search-bar' => 'border-radius: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .oes-input'       => 'border-radius: {{SIZE}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->end_controls_section();
+
+		// --- Stile: Schede Evento ---
+		$this->start_controls_section(
+			'section_style_cards',
+			[
+				'label' => esc_html__( 'Schede Evento', 'open-events' ),
+				'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
 			]
 		);
 
@@ -103,6 +142,52 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 				],
 				'selectors' => [
 					'{{WRAPPER}} .oes-grid' => 'grid-template-columns: repeat({{VALUE}}, minmax(0, 1fr));',
+				],
+			]
+		);
+
+		$this->add_responsive_control(
+			'cards_gap',
+			[
+				'label'      => esc_html__( 'Spazio tra schede', 'open-events' ),
+				'type'       => \Elementor\Controls_Manager::SLIDER,
+				'size_units' => [ 'px' ],
+				'range'      => [ 'px' => [ 'min' => 0, 'max' => 40 ] ],
+				'default'    => [ 'size' => 5, 'unit' => 'px' ],
+				'selectors'  => [
+					'{{WRAPPER}} .oes-grid' => 'gap: {{SIZE}}{{UNIT}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'card_aspect_ratio',
+			[
+				'label'     => esc_html__( 'Proporzioni scheda', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::SELECT,
+				'default'   => '3/4',
+				'options'   => [
+					'3/4'  => esc_html__( 'Verticale (3:4)', 'open-events' ),
+					'1/1'  => esc_html__( 'Quadrata (1:1)', 'open-events' ),
+					'4/3'  => esc_html__( 'Orizzontale (4:3)', 'open-events' ),
+					'16/9' => esc_html__( 'Panoramica (16:9)', 'open-events' ),
+				],
+				'selectors' => [
+					'{{WRAPPER}} .oes-card' => 'aspect-ratio: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_responsive_control(
+			'card_border_radius',
+			[
+				'label'      => esc_html__( 'Angoli arrotondati schede', 'open-events' ),
+				'type'       => \Elementor\Controls_Manager::SLIDER,
+				'size_units' => [ 'px' ],
+				'range'      => [ 'px' => [ 'min' => 0, 'max' => 32 ] ],
+				'default'    => [ 'size' => 14, 'unit' => 'px' ],
+				'selectors'  => [
+					'{{WRAPPER}} .oes-card' => 'border-radius: {{SIZE}}{{UNIT}};',
 				],
 			]
 		);
