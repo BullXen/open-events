@@ -51,17 +51,21 @@ function open_events_search_normalize_filters( array $raw ) {
 	$cat    = isset( $raw['category'] ) ? intval( $raw['category'] ) : 0;
 
 	$date_mode = isset( $raw['date_mode'] ) ? sanitize_key( $raw['date_mode'] ) : 'upcoming';
-	if ( ! in_array( $date_mode, [ 'upcoming', 'today', 'week', 'day' ], true ) ) {
+	if ( ! in_array( $date_mode, [ 'upcoming', 'today', 'week', 'month', 'range' ], true ) ) {
 		$date_mode = 'upcoming';
 	}
 
-	// La data singola vale solo in modalita' 'day' e deve essere un Y-m-d reale.
-	$date = '';
-	if ( 'day' === $date_mode ) {
-		$candidate = isset( $raw['date'] ) ? sanitize_text_field( wp_unslash( $raw['date'] ) ) : '';
-		$parsed    = \DateTime::createFromFormat( 'Y-m-d', $candidate );
-		if ( $parsed && $parsed->format( 'Y-m-d' ) === $candidate ) {
-			$date = $candidate;
+	$date_from = '';
+	$date_to   = '';
+	if ( 'range' === $date_mode ) {
+		$rf = isset( $raw['date_from'] ) ? sanitize_text_field( wp_unslash( $raw['date_from'] ) ) : '';
+		$rt = isset( $raw['date_to'] )   ? sanitize_text_field( wp_unslash( $raw['date_to'] ) )   : '';
+		$pf = \DateTime::createFromFormat( 'Y-m-d', $rf );
+		$pt = \DateTime::createFromFormat( 'Y-m-d', $rt );
+		if ( $pf && $pf->format( 'Y-m-d' ) === $rf && $pt && $pt->format( 'Y-m-d' ) === $rt ) {
+			if ( $rf > $rt ) { [ $rf, $rt ] = [ $rt, $rf ]; }
+			$date_from = $rf;
+			$date_to   = $rt ?: $rf;
 		} else {
 			$date_mode = 'upcoming';
 		}
@@ -72,7 +76,8 @@ function open_events_search_normalize_filters( array $raw ) {
 		'comune'    => $comune,
 		'category'  => $cat,
 		'date_mode' => $date_mode,
-		'date'      => $date,
+		'date_from' => $date_from,
+		'date_to'   => $date_to,
 	];
 }
 
@@ -82,7 +87,7 @@ function open_events_search_normalize_filters( array $raw ) {
  * eventi" (nessun limite superiore). Le date sono in ora locale del sito,
  * come i meta _EventStartDate/_EventEndDate scritti da The Events Calendar.
  */
-function open_events_search_date_range( $date_mode, $date ) {
+function open_events_search_date_range( $date_mode, $filters ) {
 	$now_ts = current_time( 'timestamp' );
 	$today  = date( 'Y-m-d', $now_ts );
 
@@ -91,13 +96,15 @@ function open_events_search_date_range( $date_mode, $date ) {
 			return [ $today . ' 00:00:00', $today . ' 23:59:59' ];
 
 		case 'week':
-			// Da oggi fino a domenica della settimana corrente (N: 1=lun..7=dom).
 			$days_to_sunday = 7 - (int) date( 'N', $now_ts );
 			$sunday         = date( 'Y-m-d', $now_ts + ( $days_to_sunday * DAY_IN_SECONDS ) );
 			return [ $today . ' 00:00:00', $sunday . ' 23:59:59' ];
 
-		case 'day':
-			return [ $date . ' 00:00:00', $date . ' 23:59:59' ];
+		case 'month':
+			return [ date( 'Y-m-01', $now_ts ) . ' 00:00:00', date( 'Y-m-t', $now_ts ) . ' 23:59:59' ];
+
+		case 'range':
+			return [ $filters['date_from'] . ' 00:00:00', $filters['date_to'] . ' 23:59:59' ];
 
 		case 'upcoming':
 		default:
@@ -113,7 +120,7 @@ function open_events_search_date_range( $date_mode, $date ) {
  * scatta, e non possiamo affidarci ad esso qui.
  */
 function open_events_search_query( array $filters ) {
-	list( $range_start, $range_end ) = open_events_search_date_range( $filters['date_mode'], $filters['date'] );
+	list( $range_start, $range_end ) = open_events_search_date_range( $filters['date_mode'], $filters );
 
 	// Un evento cade nella finestra se inizia entro la fine dell'intervallo e
 	// finisce dopo l'inizio (sovrapposizione). Le date TEC sono stringhe
