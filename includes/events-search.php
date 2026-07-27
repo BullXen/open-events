@@ -250,14 +250,15 @@ function open_events_search_render_card( $event_id ) {
 	ob_start();
 	?>
 	<a class="oes-card<?php echo $featured ? ' is-featured' : ''; ?>" href="<?php echo esc_url( $permalink ); ?>">
-		<div class="oes-card-media">
-			<?php if ( $thumb ) : ?>
-				<img src="<?php echo esc_url( $thumb ); ?>" alt="" loading="lazy">
-			<?php else : ?>
-				<span class="oes-card-media-placeholder" aria-hidden="true">
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
-				</span>
-			<?php endif; ?>
+		<?php if ( $thumb ) : ?>
+			<img class="oes-card-bg" src="<?php echo esc_url( $thumb ); ?>" alt="" loading="lazy">
+		<?php else : ?>
+			<span class="oes-card-bg oes-card-bg-empty" aria-hidden="true">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+			</span>
+		<?php endif; ?>
+
+		<div class="oes-card-badges">
 			<?php if ( $cat_name ) : ?>
 				<span class="oes-card-cat"><?php echo esc_html( $cat_name ); ?></span>
 			<?php endif; ?>
@@ -268,6 +269,7 @@ function open_events_search_render_card( $event_id ) {
 				</span>
 			<?php endif; ?>
 		</div>
+
 		<div class="oes-card-body">
 			<?php if ( $date_display ) : ?>
 				<span class="oes-card-date"><?php echo esc_html( $date_display ); ?></span>
