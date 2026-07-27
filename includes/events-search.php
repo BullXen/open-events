@@ -19,25 +19,102 @@ if ( ! defined( 'ABSPATH' ) ) {
 const SEARCH_MAX_RESULTS = 48;
 
 /**
- * Categorie evento (tassonomia di The Events Calendar) disponibili per il
- * menu a tendina. Nasconde le categorie vuote per non offrire filtri che
- * darebbero sempre zero risultati.
+ * Categorie evento con almeno un evento in programma (non terminato).
+ * Mostra solo categorie "vive", non quelle con soli eventi passati.
  */
-function open_events_search_get_categories() {
+function open_events_search_get_active_categories() {
 	if ( ! taxonomy_exists( 'tribe_events_cat' ) ) {
 		return [];
 	}
 
-	$terms = get_terms(
-		[
-			'taxonomy'   => 'tribe_events_cat',
-			'hide_empty' => true,
-			'orderby'    => 'name',
-			'order'      => 'ASC',
-		]
-	);
+	$now = current_time( 'mysql' );
+
+	$upcoming = new \WP_Query( [
+		'post_type'      => 'tribe_events',
+		'post_status'    => 'publish',
+		'posts_per_page' => -1,
+		'fields'         => 'ids',
+		'no_found_rows'  => true,
+		'meta_query'     => [
+			[
+				'key'     => '_EventEndDate',
+				'value'   => $now,
+				'compare' => '>=',
+				'type'    => 'DATETIME',
+			],
+		],
+	] );
+
+	if ( empty( $upcoming->posts ) ) {
+		return [];
+	}
+
+	$terms = get_terms( [
+		'taxonomy'   => 'tribe_events_cat',
+		'object_ids' => $upcoming->posts,
+		'orderby'    => 'name',
+		'order'      => 'ASC',
+	] );
 
 	return is_wp_error( $terms ) ? [] : $terms;
+}
+
+/**
+ * Comuni (dalle opzioni plugin) con almeno un evento in programma.
+ * Filtra la lista statica di città configurata in Impostazioni, restituendo
+ * solo quelle che hanno un luogo collegato a un evento futuro.
+ */
+function open_events_search_get_active_cities() {
+	$all_cities = open_events_get_available_cities();
+	if ( empty( $all_cities ) ) {
+		return [];
+	}
+
+	$now    = current_time( 'mysql' );
+	$active = [];
+
+	foreach ( $all_cities as $city ) {
+		$venue_ids = get_posts( [
+			'post_type'      => 'tribe_venue',
+			'post_status'    => 'publish',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'meta_key'       => '_VenueCity',
+			'meta_value'     => $city,
+		] );
+
+		if ( empty( $venue_ids ) ) {
+			continue;
+		}
+
+		$check = new \WP_Query( [
+			'post_type'      => 'tribe_events',
+			'post_status'    => 'publish',
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			'meta_query'     => [
+				'relation' => 'AND',
+				[
+					'key'     => '_EventEndDate',
+					'value'   => $now,
+					'compare' => '>=',
+					'type'    => 'DATETIME',
+				],
+				[
+					'key'     => '_EventVenueID',
+					'value'   => $venue_ids,
+					'compare' => 'IN',
+				],
+			],
+		] );
+
+		if ( ! empty( $check->posts ) ) {
+			$active[] = $city;
+		}
+	}
+
+	return $active;
 }
 
 /**
@@ -51,28 +128,36 @@ function open_events_search_normalize_filters( array $raw ) {
 	$cat    = isset( $raw['category'] ) ? intval( $raw['category'] ) : 0;
 
 	$date_mode = isset( $raw['date_mode'] ) ? sanitize_key( $raw['date_mode'] ) : 'upcoming';
-	if ( ! in_array( $date_mode, [ 'upcoming', 'today', 'week', 'day' ], true ) ) {
+	if ( ! in_array( $date_mode, [ 'upcoming', 'today', 'week', 'month', 'range' ], true ) ) {
 		$date_mode = 'upcoming';
 	}
 
-	// La data singola vale solo in modalita' 'day' e deve essere un Y-m-d reale.
-	$date = '';
-	if ( 'day' === $date_mode ) {
-		$candidate = isset( $raw['date'] ) ? sanitize_text_field( wp_unslash( $raw['date'] ) ) : '';
-		$parsed    = \DateTime::createFromFormat( 'Y-m-d', $candidate );
-		if ( $parsed && $parsed->format( 'Y-m-d' ) === $candidate ) {
-			$date = $candidate;
+	$date_from = '';
+	$date_to   = '';
+	if ( 'range' === $date_mode ) {
+		$rf = isset( $raw['date_from'] ) ? sanitize_text_field( wp_unslash( $raw['date_from'] ) ) : '';
+		$rt = isset( $raw['date_to'] )   ? sanitize_text_field( wp_unslash( $raw['date_to'] ) )   : '';
+		$pf = \DateTime::createFromFormat( 'Y-m-d', $rf );
+		$pt = \DateTime::createFromFormat( 'Y-m-d', $rt );
+		if ( $pf && $pf->format( 'Y-m-d' ) === $rf && $pt && $pt->format( 'Y-m-d' ) === $rt ) {
+			if ( $rf > $rt ) { [ $rf, $rt ] = [ $rt, $rf ]; }
+			$date_from = $rf;
+			$date_to   = $rt ?: $rf;
 		} else {
 			$date_mode = 'upcoming';
 		}
 	}
 
+	$max_events = isset( $raw['max_events'] ) ? max( 0, intval( $raw['max_events'] ) ) : 0;
+
 	return [
-		'text'      => $text,
-		'comune'    => $comune,
-		'category'  => $cat,
-		'date_mode' => $date_mode,
-		'date'      => $date,
+		'text'       => $text,
+		'comune'     => $comune,
+		'category'   => $cat,
+		'date_mode'  => $date_mode,
+		'date_from'  => $date_from,
+		'date_to'    => $date_to,
+		'max_events' => $max_events,
 	];
 }
 
@@ -82,7 +167,7 @@ function open_events_search_normalize_filters( array $raw ) {
  * eventi" (nessun limite superiore). Le date sono in ora locale del sito,
  * come i meta _EventStartDate/_EventEndDate scritti da The Events Calendar.
  */
-function open_events_search_date_range( $date_mode, $date ) {
+function open_events_search_date_range( $date_mode, $filters ) {
 	$now_ts = current_time( 'timestamp' );
 	$today  = date( 'Y-m-d', $now_ts );
 
@@ -91,13 +176,15 @@ function open_events_search_date_range( $date_mode, $date ) {
 			return [ $today . ' 00:00:00', $today . ' 23:59:59' ];
 
 		case 'week':
-			// Da oggi fino a domenica della settimana corrente (N: 1=lun..7=dom).
 			$days_to_sunday = 7 - (int) date( 'N', $now_ts );
 			$sunday         = date( 'Y-m-d', $now_ts + ( $days_to_sunday * DAY_IN_SECONDS ) );
 			return [ $today . ' 00:00:00', $sunday . ' 23:59:59' ];
 
-		case 'day':
-			return [ $date . ' 00:00:00', $date . ' 23:59:59' ];
+		case 'month':
+			return [ date( 'Y-m-01', $now_ts ) . ' 00:00:00', date( 'Y-m-t', $now_ts ) . ' 23:59:59' ];
+
+		case 'range':
+			return [ $filters['date_from'] . ' 00:00:00', $filters['date_to'] . ' 23:59:59' ];
 
 		case 'upcoming':
 		default:
@@ -113,7 +200,7 @@ function open_events_search_date_range( $date_mode, $date ) {
  * scatta, e non possiamo affidarci ad esso qui.
  */
 function open_events_search_query( array $filters ) {
-	list( $range_start, $range_end ) = open_events_search_date_range( $filters['date_mode'], $filters['date'] );
+	list( $range_start, $range_end ) = open_events_search_date_range( $filters['date_mode'], $filters );
 
 	// Un evento cade nella finestra se inizia entro la fine dell'intervallo e
 	// finisce dopo l'inizio (sovrapposizione). Le date TEC sono stringhe
@@ -208,7 +295,11 @@ function open_events_search_query( array $filters ) {
 		}
 	);
 
-	return array_slice( $ids, 0, SEARCH_MAX_RESULTS );
+	$limit = ( $filters['max_events'] > 0 )
+		? min( $filters['max_events'], SEARCH_MAX_RESULTS )
+		: SEARCH_MAX_RESULTS;
+
+	return array_slice( $ids, 0, $limit );
 }
 
 /**
@@ -221,14 +312,18 @@ function open_events_search_render_card( $event_id ) {
 	$thumb     = get_the_post_thumbnail_url( $event_id, 'medium_large' );
 	$featured  = '1' === get_post_meta( $event_id, '_tribe_featured', true );
 
-	$start = get_post_meta( $event_id, '_EventStartDate', true );
+	$start   = get_post_meta( $event_id, '_EventStartDate', true );
 	$all_day = '1' === (string) get_post_meta( $event_id, '_EventAllDay', true );
-	$date_display = '';
+	$date_day   = '';
+	$date_month = '';
+	$date_dow   = '';
+	$date_time  = '';
 	if ( $start ) {
-		$start_ts = strtotime( $start );
-		$date_display = $all_day
-			? date_i18n( 'D j M', $start_ts )
-			: date_i18n( 'D j M · H:i', $start_ts );
+		$start_ts   = strtotime( $start );
+		$date_day   = date_i18n( 'd', $start_ts );
+		$date_month = strtoupper( date_i18n( 'M', $start_ts ) );
+		$date_dow   = strtoupper( date_i18n( 'D', $start_ts ) );
+		$date_time  = $all_day ? '' : date_i18n( 'H:i', $start_ts );
 	}
 
 	// Comune dal luogo collegato.
@@ -271,8 +366,15 @@ function open_events_search_render_card( $event_id ) {
 		</div>
 
 		<div class="oes-card-body">
-			<?php if ( $date_display ) : ?>
-				<span class="oes-card-date"><?php echo esc_html( $date_display ); ?></span>
+			<?php if ( $date_day ) : ?>
+				<div class="oes-card-date-badge">
+					<span class="oes-card-date-month"><?php echo esc_html( $date_month ); ?></span>
+					<span class="oes-card-date-day"><?php echo esc_html( $date_day ); ?></span>
+					<span class="oes-card-date-dow"><?php echo esc_html( $date_dow ); ?></span>
+					<?php if ( $date_time ) : ?>
+						<span class="oes-card-date-time"><?php echo esc_html( $date_time ); ?></span>
+					<?php endif; ?>
+				</div>
 			<?php endif; ?>
 			<h3 class="oes-card-title"><?php echo esc_html( $title ); ?></h3>
 			<?php if ( $comune ) : ?>
