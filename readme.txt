@@ -4,7 +4,7 @@ Tags: events, elementor, the-events-calendar, front-end submission
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.9
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,9 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * I nuovi eventi vengono salvati come "in attesa di revisione" (pending) cosi' un amministratore puo' approvarli prima della pubblicazione; luoghi e organizzatori restano in bozza.
 
 == Changelog ==
+
+= 1.1.0 =
+* Nuovo: widget Elementor "Ricerca Eventi" — una barra di ricerca personalizzata e moderna per la pagina eventi, alternativa alla barra nativa di The Events Calendar. Include: campo di ricerca testuale (opzionale), menu a tendina "Tutti i Comuni" con selezione del singolo comune, menu a tendina delle categorie evento, e filtri rapidi per data (Prossimi, Oggi, Questa settimana) più la scelta di una data singola. I risultati sono mostrati in una griglia di card disegnata dal plugin (immagine, data, comune, categoria, badge "in primo piano") e si aggiornano dal vivo via AJAX, senza ricaricare la pagina. Dalle opzioni Elementor si possono regolare colore principale e numero di colonne.
 
 = 1.0.9 =
 * Nuovo: sezione "Utenti" nel portale, riservata agli amministratori — voce nella barra laterale e scheda nella bacheca — per vedere tutti gli utenti iscritti (con email, ruolo, data di iscrizione e numero di eventi creati), cambiarne il ruolo, aprirli in wp-admin o eliminarli (i loro eventi/luoghi/organizzatori vengono riassegnati all'amministratore). Sono presenti protezioni: non è possibile modificare/eliminare il proprio account, eliminare altri amministratori o rimuovere l'ultimo amministratore.

@@ -1,0 +1,317 @@
+/* Ricerca Eventi — barra di ricerca + griglia risultati (namespace .oes-*). */
+
+.oes-search {
+    --oes-accent: #4f46e5;
+    --oes-bg: #ffffff;
+    --oes-border: #e5e7eb;
+    --oes-text: #111827;
+    --oes-muted: #6b7280;
+    --oes-radius: 14px;
+    --oes-shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 4px 16px rgba(16, 24, 40, .06);
+    color: var(--oes-text);
+    font-family: inherit;
+}
+
+/* --- Barra --- */
+.oes-search-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px;
+    background: var(--oes-bg);
+    border: 1px solid var(--oes-border);
+    border-radius: var(--oes-radius);
+    box-shadow: var(--oes-shadow);
+}
+
+.oes-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1 1 180px;
+    min-width: 150px;
+}
+
+.oes-field-text {
+    flex: 2 1 240px;
+}
+
+.oes-field-icon {
+    position: absolute;
+    left: 14px;
+    width: 18px;
+    height: 18px;
+    color: var(--oes-muted);
+    pointer-events: none;
+}
+
+.oes-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 14px 0 42px;
+    font-size: 15px;
+    color: var(--oes-text);
+    background: #f9fafb;
+    border: 1px solid var(--oes-border);
+    border-radius: 10px;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.oes-input::placeholder {
+    color: var(--oes-muted);
+}
+
+.oes-input:focus {
+    outline: none;
+    background: #fff;
+    border-color: var(--oes-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--oes-accent) 18%, transparent);
+}
+
+/* Freccia custom per i menu a tendina. */
+select.oes-input {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 38px;
+}
+
+.oes-input-date {
+    padding-left: 42px;
+}
+
+/* --- Chip rapidi + reset --- */
+.oes-quick {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 14px 0 18px;
+}
+
+.oes-chip {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--oes-muted);
+    background: #f3f4f6;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all .15s ease;
+}
+
+.oes-chip:hover {
+    color: var(--oes-text);
+    background: #e9ebef;
+}
+
+.oes-chip.is-active {
+    color: #fff;
+    background: var(--oes-accent);
+    border-color: var(--oes-accent);
+}
+
+.oes-reset {
+    margin-left: auto;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--oes-muted);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.oes-reset:hover {
+    color: var(--oes-text);
+}
+
+/* --- Griglia risultati --- */
+.oes-results {
+    position: relative;
+    min-height: 80px;
+    transition: opacity .15s ease;
+}
+
+.oes-results.is-loading {
+    opacity: .5;
+    pointer-events: none;
+}
+
+.oes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+/* --- Card --- */
+.oes-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--oes-bg);
+    border: 1px solid var(--oes-border);
+    border-radius: var(--oes-radius);
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: var(--oes-shadow);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.oes-card:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--oes-accent) 40%, var(--oes-border));
+    box-shadow: 0 8px 28px rgba(16, 24, 40, .12);
+}
+
+.oes-card.is-featured {
+    border-color: #fcd34d;
+    box-shadow: 0 0 0 1px #fcd34d, var(--oes-shadow);
+}
+
+.oes-card-media {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    background: #f3f4f6;
+}
+
+.oes-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.oes-card-media-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: #cbd0d8;
+}
+
+.oes-card-media-placeholder svg {
+    width: 44px;
+    height: 44px;
+}
+
+.oes-card-cat {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(17, 24, 39, .72);
+    backdrop-filter: blur(4px);
+    border-radius: 999px;
+}
+
+.oes-card-featured {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #b45309;
+    background: #fef3c7;
+    border-radius: 999px;
+}
+
+.oes-card-featured svg {
+    width: 13px;
+    height: 13px;
+}
+
+.oes-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px;
+}
+
+.oes-card-date {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--oes-accent);
+    text-transform: capitalize;
+}
+
+.oes-card-title {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.35;
+    font-weight: 700;
+    color: var(--oes-text);
+}
+
+.oes-card-place {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: var(--oes-muted);
+}
+
+.oes-card-place svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* --- Stato vuoto --- */
+.oes-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 48px 20px;
+    color: var(--oes-muted);
+    text-align: center;
+}
+
+.oes-empty svg {
+    width: 40px;
+    height: 40px;
+    opacity: .6;
+}
+
+.oes-empty p {
+    margin: 0;
+    font-size: 15px;
+}
+
+/* --- Responsive --- */
+@media (max-width: 900px) {
+    .oes-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .oes-field,
+    .oes-field-text {
+        flex: 1 1 100%;
+    }
+
+    .oes-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .oes-reset {
+        margin-left: 0;
+    }
+}
