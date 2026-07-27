@@ -224,12 +224,16 @@ class OesDatePicker {
 
         this.$dp.on('mouseover', '.oes-dp-day:not(.is-empty)', (e) => {
             if (this.pickStep !== 1) return;
-            this.hover = new Date(parseInt(jQuery(e.currentTarget).data('ts'), 10));
+            const ts = parseInt(jQuery(e.currentTarget).data('ts'), 10);
+            // Ri-renderizza solo se il giorno cambia: evita il loop
+            // "DOM replaced under cursor → new mouseover → _renderDays() → loop"
+            if (this.hover && this.hover.getTime() === ts) return;
+            this.hover = new Date(ts);
             this._renderDays();
         });
 
         this.$dp.on('mouseleave', '.oes-dp-days', () => {
-            if (this.pickStep !== 1) return;
+            if (this.pickStep !== 1 || !this.hover) return;
             this.hover = null;
             this._renderDays();
         });
