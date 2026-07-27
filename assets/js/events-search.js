@@ -126,9 +126,6 @@ class OesDatePicker {
     </div>
     <div class="oes-dp-weekdays">${wd}</div>
     <div class="oes-dp-days"></div>
-    <div class="oes-dp-footer">
-        <button type="button" class="oes-dp-clear">Cancella</button>
-    </div>
 </div>`;
     }
 
@@ -220,9 +217,8 @@ class OesDatePicker {
                 this.pickStep = 0;
                 this.hover    = null;
                 this._updateLabel();
-                this._renderDays();
-                this.onChange();
-                setTimeout(() => this.close(), 180);
+                this.close();       // chiudi subito
+                this.onChange();    // lancia la ricerca
             }
         });
 
@@ -238,12 +234,6 @@ class OesDatePicker {
             this._renderDays();
         });
 
-        this.$dp.on('click', '.oes-dp-clear', (e) => {
-            e.stopPropagation();
-            this.clearSilent();
-            this.close();
-            this.onChange();
-        });
     }
 }
 

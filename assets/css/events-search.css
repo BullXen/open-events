@@ -249,26 +249,6 @@ select.oes-input {
     color: var(--oes-accent);
 }
 
-.oes-dp-footer {
-    border-top: 1px solid var(--oes-border);
-    padding: 10px 16px;
-    display: flex;
-    justify-content: flex-end;
-}
-
-.oes-dp-clear {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--oes-muted);
-    background: transparent;
-    border: none;
-    border-radius: 8px;
-    padding: 6px 10px;
-    cursor: pointer;
-    text-decoration: underline;
-}
-
-.oes-dp-clear:hover { color: var(--oes-text); }
 
 /* --- Chip rapidi + reset --- */
 .oes-quick {
