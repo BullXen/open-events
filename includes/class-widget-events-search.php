@@ -322,6 +322,41 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 			]
 		);
 
+		$this->add_control(
+			'heading_gradient',
+			[
+				'label'     => esc_html__( 'Gradiente sfondo', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_control(
+			'card_gradient_color',
+			[
+				'label'     => esc_html__( 'Colore e trasparenza', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'default'   => 'rgba(10, 12, 18, 0.96)',
+				'selectors' => [
+					'{{WRAPPER}} .oes-card' => '--oes-grad-color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_responsive_control(
+			'card_gradient_height',
+			[
+				'label'      => esc_html__( 'Altezza gradiente', 'open-events' ),
+				'type'       => \Elementor\Controls_Manager::SLIDER,
+				'size_units' => [ '%' ],
+				'range'      => [ '%' => [ 'min' => 10, 'max' => 100 ] ],
+				'default'    => [ 'size' => 40, 'unit' => '%' ],
+				'selectors'  => [
+					'{{WRAPPER}} .oes-card' => '--oes-grad-height: {{SIZE}}{{UNIT}};',
+				],
+			]
+		);
+
 		$this->end_controls_section();
 	}
 

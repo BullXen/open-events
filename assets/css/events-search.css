@@ -389,17 +389,16 @@ select.oes-input {
     height: 52px;
 }
 
-/* Gradient scuro solo nella fascia bassa (comune + titolo), trasparente sopra */
+/* Gradient scuro solo nella fascia bassa (comune + titolo), trasparente sopra.
+   Colore, trasparenza e altezza sono personalizzabili dalle opzioni Elementor. */
 .oes-card::after {
     content: '';
     position: absolute;
     inset: 0;
     background: linear-gradient(
         to top,
-        rgba(10, 12, 18, .96) 0%,
-        rgba(10, 12, 18, .86) 20%,
-        rgba(10, 12, 18, .10) 32%,
-        transparent 40%
+        var(--oes-grad-color, rgba(10, 12, 18, .96)) 0%,
+        transparent var(--oes-grad-height, 40%)
     );
     pointer-events: none;
 }
