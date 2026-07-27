@@ -219,9 +219,10 @@ select.oes-input {
 
 .oes-dp-day.is-empty { pointer-events: none; }
 
-/* Hover solo su celle normali; start/end/single conservano sfondo accent */
+/* Hover: testo accent + leggero sfondo tinto; start/end/single restano invariati */
 .oes-dp-day:not(.is-empty):not(.is-start):not(.is-end):not(.is-single):hover {
-    background: #e9ebef;
+    background: color-mix(in srgb, var(--oes-accent) 10%, transparent);
+    color: var(--oes-accent);
 }
 
 .oes-dp-day.is-today {
