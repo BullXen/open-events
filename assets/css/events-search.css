@@ -305,6 +305,7 @@ select.oes-input {
 /* --- Griglia risultati --- */
 .oes-results {
     position: relative;
+    z-index: 100;
     min-height: 80px;
     transition: opacity .15s ease;
 }
@@ -323,6 +324,7 @@ select.oes-input {
 /* --- Card (immagine full-cover + overlay gradient) --- */
 .oes-card {
     position: relative;
+    z-index: 10;
     display: block;
     aspect-ratio: 3 / 4;
     border-radius: var(--oes-radius);
