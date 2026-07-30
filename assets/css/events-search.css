@@ -219,9 +219,8 @@ select.oes-input {
 
 .oes-dp-day.is-empty { pointer-events: none; }
 
-/* Hover: testo accent + leggero sfondo tinto; start/end/single restano invariati */
+/* Hover: solo testo accent, nessuno sfondo; start/end/single restano invariati */
 .oes-dp-day:not(.is-empty):not(.is-start):not(.is-end):not(.is-single):hover {
-    background: color-mix(in srgb, var(--oes-accent) 10%, transparent);
     color: var(--oes-accent);
 }
 
@@ -306,6 +305,7 @@ select.oes-input {
 /* --- Griglia risultati --- */
 .oes-results {
     position: relative;
+    z-index: 100;
     min-height: 80px;
     transition: opacity .15s ease;
 }
@@ -324,6 +324,7 @@ select.oes-input {
 /* --- Card (immagine full-cover + overlay gradient) --- */
 .oes-card {
     position: relative;
+    z-index: 10;
     display: block;
     aspect-ratio: 3 / 4;
     border-radius: var(--oes-radius);
@@ -547,10 +548,12 @@ select.oes-input {
     font-size: 15px;
 }
 
-/* --- Responsive --- */
+/* --- Responsive ---
+   !important necessario perché Elementor genera CSS con specificità più alta
+   ({{WRAPPER}} .oes-grid) che altrimenti vince sulle media query. */
 @media (max-width: 900px) {
     .oes-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
 }
 
@@ -561,7 +564,7 @@ select.oes-input {
     }
 
     .oes-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
     }
 
     .oes-reset {
