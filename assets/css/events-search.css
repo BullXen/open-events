@@ -88,6 +88,13 @@ select.oes-input {
     cursor: pointer;
 }
 
+/* Neutralizza l'hover rosso bordeaux dei bottoni del tema: qui è un campo, non un CTA. */
+.oes-date-trigger:hover {
+    background: #f9fafb;
+    color: inherit;
+    border-color: var(--oes-border);
+}
+
 .oes-date-label {
     flex: 1;
     font-size: 15px;
@@ -302,10 +309,53 @@ select.oes-input {
     color: var(--oes-text);
 }
 
+.oes-view-toggle {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    background: #f3f4f6;
+    border-radius: 10px;
+}
+
+.oes-view-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    color: var(--oes-muted);
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all .15s ease;
+}
+
+.oes-view-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.oes-view-btn:hover {
+    color: var(--oes-text);
+}
+
+.oes-view-btn.is-active {
+    color: var(--oes-text);
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, .08);
+}
+
+.oes-view-btn:focus-visible {
+    outline: 2px solid var(--oes-accent);
+    outline-offset: 2px;
+}
+
 /* --- Griglia risultati --- */
 .oes-results {
     position: relative;
-    z-index: 100;
+    z-index: 1;
     min-height: 80px;
     transition: opacity .15s ease;
 }
@@ -324,7 +374,7 @@ select.oes-input {
 /* --- Card (immagine full-cover + overlay gradient) --- */
 .oes-card {
     position: relative;
-    z-index: 10;
+    z-index: 1;
     display: block;
     aspect-ratio: 3 / 4;
     border-radius: var(--oes-radius);
@@ -333,12 +383,28 @@ select.oes-input {
     color: #fff;
     background: #1a1d23;
     box-shadow: var(--oes-shadow);
+    cursor: pointer;
     transition: transform .2s ease, box-shadow .2s ease;
 }
 
 .oes-card:hover {
     transform: translateY(-4px) scale(1.01);
     box-shadow: 0 16px 40px rgba(16, 24, 40, .22);
+}
+
+.oes-card:focus-visible {
+    outline: 2px solid var(--oes-accent);
+    outline-offset: 2px;
+}
+
+.oes-card-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.oes-card-title a:focus-visible {
+    outline: 2px solid var(--oes-accent);
+    outline-offset: 2px;
 }
 
 .oes-card.is-featured {
@@ -523,6 +589,181 @@ select.oes-input {
     height: 15px;
     flex-shrink: 0;
     stroke-width: 2.5;
+}
+
+/* --- Vista lista: riusa il markup della card, cambia solo il layout --- */
+.oes-results.is-list .oes-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.oes-results.is-list .oes-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    /* !important: l'opzione "Proporzioni scheda" di Elementor inietta
+       {{WRAPPER}} .oes-card { aspect-ratio: ... } con specificità/ordine
+       più alta e vincerebbe altrimenti, rendendo le righe altissime. */
+    aspect-ratio: auto !important;
+    padding: 10px 44px 10px 96px;
+    color: var(--oes-text);
+    background: var(--oes-bg);
+    border: 1px solid var(--oes-border);
+    box-shadow: none;
+}
+
+.oes-results.is-list .oes-card:hover,
+.oes-results.is-list .oes-card:focus-visible {
+    transform: none;
+    background: #f9fafb;
+    box-shadow: var(--oes-shadow);
+}
+
+.oes-results.is-list .oes-card:focus-visible {
+    outline: 2px solid var(--oes-accent);
+    outline-offset: -2px;
+}
+
+.oes-results.is-list .oes-card::after {
+    display: none;
+}
+
+.oes-results.is-list .oes-card-bg {
+    top: 10px;
+    left: 10px;
+    right: auto;
+    bottom: auto;
+    width: 72px;
+    height: 72px;
+    border-radius: 8px;
+}
+
+/* Su sfondo bianco il chip semi-trasparente pensato per l'overlay sull'immagine
+   non garantisce 4.5:1 (WCAG AA): qui diventa pieno, niente blur da fare. */
+.oes-results.is-list .oes-card-cat {
+    background: var(--oes-accent);
+    backdrop-filter: none;
+}
+
+.oes-results.is-list .oes-card-badges,
+.oes-results.is-list .oes-card-body {
+    position: static;
+    padding: 0;
+}
+
+.oes-results.is-list .oes-card-date-badge {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 5px;
+    padding: 0;
+    min-width: 0;
+    background: none;
+    border: none;
+    backdrop-filter: none;
+}
+
+.oes-results.is-list .oes-card-date-month,
+.oes-results.is-list .oes-card-date-dow,
+.oes-results.is-list .oes-card-date-time {
+    color: var(--oes-muted);
+    background: none;
+    padding: 0;
+}
+
+.oes-results.is-list .oes-card-date-day {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--oes-text);
+    margin: 0;
+}
+
+.oes-results.is-list .oes-card-title {
+    color: var(--oes-text);
+    text-shadow: none;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.oes-results.is-list .oes-card-place {
+    color: var(--oes-muted);
+}
+
+.oes-results.is-comune-clickable.is-list .oes-card-place:hover {
+    color: var(--oes-accent);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* --- Quick action "Condividi": solo in lista, hover su desktop, sempre visibile su mobile --- */
+.oes-card-share {
+    display: none;
+}
+
+.oes-results.is-list .oes-card-share {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    color: var(--oes-muted);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .15s ease, background .15s ease, color .15s ease;
+}
+
+.oes-results.is-list .oes-card-share svg {
+    width: 17px;
+    height: 17px;
+}
+
+.oes-results.is-list .oes-card:hover .oes-card-share,
+.oes-results.is-list .oes-card-share:focus-visible {
+    opacity: 1;
+}
+
+.oes-results.is-list .oes-card-share:hover {
+    background: #eef2ff;
+    color: var(--oes-accent);
+}
+
+.oes-results.is-list .oes-card-share:focus-visible {
+    outline: 2px solid var(--oes-accent);
+    outline-offset: 1px;
+}
+
+.oes-results.is-list .oes-card-share.is-copied {
+    color: #16a34a;
+    opacity: 1;
+}
+
+@media (max-width: 600px) {
+    .oes-results.is-list .oes-card-share {
+        opacity: 1;
+        right: 6px;
+    }
+}
+
+@media (max-width: 600px) {
+    .oes-results.is-list .oes-card {
+        padding-left: 80px;
+    }
+
+    .oes-results.is-list .oes-card-bg {
+        width: 60px;
+        height: 60px;
+    }
 }
 
 /* --- Stato vuoto --- */

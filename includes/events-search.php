@@ -306,7 +306,21 @@ function open_events_search_query( array $filters ) {
  * Markup di una singola card evento. Grafica nostra (classi oes-*) per avere
  * pieno controllo estetico, indipendente dal tema TEC.
  */
+/** Incrementa il contatore di visualizzazioni scheda per le Statistiche admin. */
+function open_events_track_card_view( $event_id ) {
+	global $wpdb;
+	$updated = $wpdb->query( $wpdb->prepare(
+		"UPDATE {$wpdb->postmeta} SET meta_value = meta_value + 1 WHERE post_id = %d AND meta_key = '_oe_card_views'",
+		$event_id
+	) );
+	if ( ! $updated ) {
+		add_post_meta( $event_id, '_oe_card_views', 1, true );
+	}
+}
+
 function open_events_search_render_card( $event_id ) {
+	open_events_track_card_view( $event_id );
+
 	$permalink = get_permalink( $event_id );
 	$title     = get_the_title( $event_id );
 	$thumb     = get_the_post_thumbnail_url( $event_id, 'medium_large' );
@@ -344,7 +358,7 @@ function open_events_search_render_card( $event_id ) {
 
 	ob_start();
 	?>
-	<a class="oes-card<?php echo $featured ? ' is-featured' : ''; ?>" href="<?php echo esc_url( $permalink ); ?>">
+	<article class="oes-card<?php echo $featured ? ' is-featured' : ''; ?>" tabindex="0" data-href="<?php echo esc_url( $permalink ); ?>">
 		<?php if ( $thumb ) : ?>
 			<img class="oes-card-bg" src="<?php echo esc_url( $thumb ); ?>" alt="" loading="lazy">
 		<?php else : ?>
@@ -376,7 +390,7 @@ function open_events_search_render_card( $event_id ) {
 					<?php endif; ?>
 				</div>
 			<?php endif; ?>
-			<h3 class="oes-card-title"><?php echo esc_html( $title ); ?></h3>
+			<h3 class="oes-card-title"><a href="<?php echo esc_url( $permalink ); ?>"><?php echo esc_html( $title ); ?></a></h3>
 			<?php if ( $comune ) : ?>
 				<span class="oes-card-place">
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 5.5-8 12-8 12s-8-6.5-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -384,7 +398,11 @@ function open_events_search_render_card( $event_id ) {
 				</span>
 			<?php endif; ?>
 		</div>
-	</a>
+
+		<button type="button" class="oes-card-share" data-title="<?php echo esc_attr( $title ); ?>" data-url="<?php echo esc_url( $permalink ); ?>" aria-label="<?php esc_attr_e( 'Condividi evento', 'open-events' ); ?>">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+		</button>
+	</article>
 	<?php
 	return ob_get_clean();
 }

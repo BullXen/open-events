@@ -217,6 +217,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             'eye'      => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
             'check'    => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
             'trash'    => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
+            'chart'    => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
         ];
 
         return $icons[ $key ] ?? '';
@@ -235,9 +236,10 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             'tribe_organizer' => [ 'label' => esc_html__( 'I Miei Organizzatori', 'open-events' ), 'icon' => 'person' ],
         ];
 
-        // La gestione utenti è riservata agli amministratori.
+        // Gestione utenti e statistiche sono riservate agli amministratori.
         if ( current_user_can( 'manage_options' ) ) {
             $nav_items['users'] = [ 'label' => esc_html__( 'Utenti', 'open-events' ), 'icon' => 'users' ];
+            $nav_items['stats'] = [ 'label' => esc_html__( 'Statistiche', 'open-events' ), 'icon' => 'chart' ];
         }
 
         $nav_items['profile'] = [ 'label' => esc_html__( 'Profilo', 'open-events' ), 'icon' => 'person' ];
@@ -324,6 +326,46 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
         <?php
     }
 
+    /**
+     * Quanti elementi di $post_type sono stati aggiunti dall'ultima visita
+     * dell'utente a quella sezione. Alla primissima visita in assoluto (nessun
+     * meta salvato) non mostriamo mai un conteggio: inizializza e basta,
+     * altrimenti ogni contenuto esistente comparirebbe come "nuovo".
+     */
+    private function hub_new_count( $post_type, $is_admin_view, $current_user_id ) {
+        $meta_key  = '_oe_hub_seen_' . $post_type;
+        $last_seen = get_user_meta( $current_user_id, $meta_key, true );
+
+        if ( '' === $last_seen ) {
+            update_user_meta( $current_user_id, $meta_key, time() );
+            return 0;
+        }
+
+        $args = [
+            'post_type'      => $post_type,
+            'post_status'    => [ 'publish', 'pending', 'draft', 'future' ],
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'date_query'     => [
+                [
+                    'column'    => 'post_date_gmt',
+                    'after'     => gmdate( 'Y-m-d H:i:s', (int) $last_seen ),
+                    'inclusive' => false,
+                ],
+            ],
+        ];
+        if ( ! $is_admin_view ) {
+            $args['author'] = $current_user_id;
+        }
+
+        return count( get_posts( $args ) );
+    }
+
+    /** Segna $post_type come "visto adesso" per l'utente: azzera il badge. */
+    private function hub_mark_seen( $post_type, $current_user_id ) {
+        update_user_meta( $current_user_id, '_oe_hub_seen_' . $post_type, time() );
+    }
+
     protected function render() {
         if ( ! is_user_logged_in() ) {
             echo '<div class="em-alert error">' . esc_html__( 'Devi aver effettuato l\'accesso per inserire un evento.', 'open-events' ) . '</div>';
@@ -341,8 +383,12 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
         $post_type = '';
         if ( 'hub' === $action_mode ) {
             $post_type = isset( $_GET['view'] ) ? sanitize_text_field( $_GET['view'] ) : '';
-            if ( ! in_array( $post_type, [ 'tribe_events', 'tribe_organizer', 'tribe_venue', 'profile', 'users' ] ) ) {
+            if ( ! in_array( $post_type, [ 'tribe_events', 'tribe_organizer', 'tribe_venue', 'profile', 'users', 'stats' ] ) ) {
                 $post_type = '';
+            }
+            // L'utente sta aprendo la sezione: il badge "nuovi" si azzera.
+            if ( in_array( $post_type, [ 'tribe_events', 'tribe_organizer', 'tribe_venue' ], true ) ) {
+                $this->hub_mark_seen( $post_type, $current_user_id );
             }
         } else {
             $post_type = $settings['post_type_mode'];
@@ -714,8 +760,122 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             return;
         }
 
+        // Handle Statistiche (solo amministratori)
+        if ( 'stats' === $post_type ) {
+            if ( ! $is_admin_view ) {
+                echo '<div class="em-alert error">' . esc_html__( 'Non hai i permessi per vedere le statistiche.', 'open-events' ) . '</div>';
+                if ( $show_sidebar ) {
+                    echo '</div></div>';
+                }
+                return;
+            }
+
+            global $wpdb;
+
+            $events_counts     = wp_count_posts( 'tribe_events' );
+            $venues_counts     = wp_count_posts( 'tribe_venue' );
+            $organizers_counts = wp_count_posts( 'tribe_organizer' );
+
+            $published_events     = (int) ( $events_counts->publish ?? 0 );
+            $published_venues     = (int) ( $venues_counts->publish ?? 0 );
+            $published_organizers = (int) ( $organizers_counts->publish ?? 0 );
+
+            // "Online" = pubblicati e non ancora conclusi (visibili ora sul sito).
+            $upcoming_query = new \WP_Query( [
+                'post_type'      => 'tribe_events',
+                'post_status'    => 'publish',
+                'posts_per_page' => 1,
+                'fields'         => 'ids',
+                'meta_query'     => [
+                    [
+                        'key'     => '_EventStartDate',
+                        'value'   => current_time( 'mysql' ),
+                        'compare' => '>=',
+                        'type'    => 'DATETIME',
+                    ],
+                ],
+            ] );
+            $online_events = (int) $upcoming_query->found_posts;
+            $past_events    = max( 0, $published_events - $online_events );
+
+            $users_count = count_users();
+            $total_users = (int) ( $users_count['total_users'] ?? 0 );
+
+            $total_views = (int) $wpdb->get_var( $wpdb->prepare(
+                "SELECT SUM(CAST(pm.meta_value AS UNSIGNED)) FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE pm.meta_key = '_oe_card_views' AND p.post_type = %s",
+                'tribe_events'
+            ) );
+
+            $top_viewed = $wpdb->get_results( $wpdb->prepare(
+                "SELECT p.ID, p.post_title, CAST(pm.meta_value AS UNSIGNED) AS views
+                 FROM {$wpdb->posts} p
+                 INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = '_oe_card_views'
+                 WHERE p.post_type = %s AND p.post_status = 'publish'
+                 ORDER BY views DESC
+                 LIMIT 5",
+                'tribe_events'
+            ) );
+
+            $stat_tiles = [
+                [ 'icon' => 'calendar', 'label' => esc_html__( 'Eventi pubblicati', 'open-events' ), 'value' => $published_events ],
+                [ 'icon' => 'eye',      'label' => esc_html__( 'Eventi online', 'open-events' ),      'value' => $online_events ],
+                [ 'icon' => 'calendar', 'label' => esc_html__( 'Eventi passati', 'open-events' ),     'value' => $past_events ],
+                [ 'icon' => 'map-pin',  'label' => esc_html__( 'Luoghi pubblicati', 'open-events' ),  'value' => $published_venues ],
+                [ 'icon' => 'person',   'label' => esc_html__( 'Organizzatori pubblicati', 'open-events' ), 'value' => $published_organizers ],
+                [ 'icon' => 'users',    'label' => esc_html__( 'Utenti iscritti', 'open-events' ),    'value' => $total_users ],
+                [ 'icon' => 'eye',      'label' => esc_html__( 'Visualizzazioni schede evento', 'open-events' ), 'value' => $total_views ],
+            ];
+            ?>
+            <div class="em-form-container em-dashboard-view em-stats-view">
+                <?php $this->render_breadcrumbs( [
+                    [ 'label' => esc_html__( 'Dashboard', 'open-events' ), 'url' => remove_query_arg( 'view' ) ],
+                    [ 'label' => esc_html__( 'Statistiche', 'open-events' ), 'url' => '' ],
+                ] ); ?>
+
+                <div class="em-back-link">
+                    <a href="<?php echo esc_url( remove_query_arg( 'view' ) ); ?>">&larr; <?php esc_html_e( 'Torna alla Dashboard', 'open-events' ); ?></a>
+                </div>
+
+                <div class="em-dashboard-header">
+                    <h2><?php $this->render_icon( 'chart' ); ?> <?php esc_html_e( 'Statistiche', 'open-events' ); ?></h2>
+                </div>
+
+                <div class="em-stats-grid">
+                    <?php foreach ( $stat_tiles as $tile ) : ?>
+                        <div class="em-stat-tile">
+                            <div class="em-stat-icon"><?php $this->render_icon( $tile['icon'] ); ?></div>
+                            <span class="em-stat-value"><?php echo esc_html( number_format_i18n( $tile['value'] ) ); ?></span>
+                            <span class="em-stat-label"><?php echo esc_html( $tile['label'] ); ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <?php if ( $top_viewed ) : ?>
+                    <h3 class="em-stats-subheading"><?php esc_html_e( 'Eventi più visualizzati', 'open-events' ); ?></h3>
+                    <div class="em-items-list em-stats-top-list">
+                        <?php foreach ( $top_viewed as $row ) : ?>
+                            <div class="em-item-row">
+                                <div class="em-item-info">
+                                    <strong class="em-item-title"><?php echo esc_html( $row->post_title ); ?></strong>
+                                </div>
+                                <span class="em-count-badge"><?php echo esc_html( number_format_i18n( (int) $row->views ) ); ?></span>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            <?php
+            if ( $show_sidebar ) {
+                echo '</div></div>';
+            }
+            return;
+        }
+
         // Handle Portal Hub Home
         if ( 'hub' === $action_mode && empty( $post_type ) ) {
+            $hub_new_events     = $this->hub_new_count( 'tribe_events', $is_admin_view, $current_user_id );
+            $hub_new_venues     = $this->hub_new_count( 'tribe_venue', $is_admin_view, $current_user_id );
+            $hub_new_organizers = $this->hub_new_count( 'tribe_organizer', $is_admin_view, $current_user_id );
             ?>
             <div class="em-form-container em-hub-view">
                 <div class="em-hub-header">
@@ -731,6 +891,9 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                 <div class="em-hub-grid">
                     <!-- I Miei Eventi -->
                     <a href="<?php echo esc_url( add_query_arg( 'view', 'tribe_events' ) ); ?>" class="em-hub-card em-events-card">
+                        <?php if ( $hub_new_events > 0 ) : ?>
+                            <span class="em-hub-badge"><?php echo esc_html( $hub_new_events ); ?></span>
+                        <?php endif; ?>
                         <div class="em-card-icon">
                             <?php $this->render_icon( 'calendar' ); ?>
                         </div>
@@ -741,6 +904,9 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
 
                     <!-- I Miei Luoghi -->
                     <a href="<?php echo esc_url( add_query_arg( 'view', 'tribe_venue' ) ); ?>" class="em-hub-card">
+                        <?php if ( $hub_new_venues > 0 ) : ?>
+                            <span class="em-hub-badge"><?php echo esc_html( $hub_new_venues ); ?></span>
+                        <?php endif; ?>
                         <div class="em-card-icon">
                             <?php $this->render_icon( 'map-pin' ); ?>
                         </div>
@@ -751,6 +917,9 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
 
                     <!-- I Miei Organizzatori -->
                     <a href="<?php echo esc_url( add_query_arg( 'view', 'tribe_organizer' ) ); ?>" class="em-hub-card">
+                        <?php if ( $hub_new_organizers > 0 ) : ?>
+                            <span class="em-hub-badge"><?php echo esc_html( $hub_new_organizers ); ?></span>
+                        <?php endif; ?>
                         <div class="em-card-icon">
                             <?php $this->render_icon( 'person' ); ?>
                         </div>
@@ -767,6 +936,16 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                             </div>
                             <h4><?php esc_html_e( 'Utenti', 'open-events' ); ?></h4>
                             <p><?php esc_html_e( 'Vedi tutti gli utenti iscritti, cambia il loro ruolo o eliminali.', 'open-events' ); ?></p>
+                            <span class="em-card-btn"><?php esc_html_e( 'Accedi', 'open-events' ); ?> &rarr;</span>
+                        </a>
+
+                        <!-- Statistiche (solo admin) -->
+                        <a href="<?php echo esc_url( add_query_arg( 'view', 'stats' ) ); ?>" class="em-hub-card em-stats-card">
+                            <div class="em-card-icon">
+                                <?php $this->render_icon( 'chart' ); ?>
+                            </div>
+                            <h4><?php esc_html_e( 'Statistiche', 'open-events' ); ?></h4>
+                            <p><?php esc_html_e( 'Eventi pubblicati, online, visualizzazioni schede e altri numeri chiave.', 'open-events' ); ?></p>
                             <span class="em-card-btn"><?php esc_html_e( 'Accedi', 'open-events' ); ?> &rarr;</span>
                         </a>
                     <?php endif; ?>
