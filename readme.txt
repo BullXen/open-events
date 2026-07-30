@@ -4,7 +4,7 @@ Tags: events, elementor, the-events-calendar, front-end submission
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.1.1
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,16 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * I nuovi eventi vengono salvati come "in attesa di revisione" (pending) cosi' un amministratore puo' approvarli prima della pubblicazione; luoghi e organizzatori restano in bozza.
 
 == Changelog ==
+
+= 1.2.0 =
+* Nuovo: vista Lista nel widget Ricerca Eventi (in alternativa alla griglia a card), con toggle persistente in localStorage; ogni riga mostra immagine, categoria, data/ora, titolo e comune in formato compatto.
+* Nuovo: nella vista Lista, cliccando sul comune di un evento si applica automaticamente il filtro "Comune" (se attivo nel widget), senza dover aprire il menu a tendina.
+* Nuovo: pulsante "Condividi" su ogni riga della vista Lista (visibile sempre su mobile, al passaggio del mouse su desktop) — usa la condivisione nativa del dispositivo se disponibile, altrimenti copia il link dell'evento negli appunti.
+* Fix: durante lo scroll della pagina, le card degli eventi passavano sopra l'header del sito invece di restarci sotto (z-index eccessivo).
+* Fix: nel widget Ricerca Eventi, passare il mouse sul campo data lo coloriva di rosso bordeaux (colore hover ereditato dal tema); ora resta neutro come gli altri campi.
+* Miglioramento: contrasto badge categoria nella vista Lista portato a conformità WCAG AA; card della vista Lista rese navigabili da tastiera (`article` con `tabindex`, focus visibile).
+* Nuovo: nella Dashboard, le sezioni "I Miei Eventi/Luoghi/Organizzatori" mostrano un badge con il numero di elementi aggiunti dall'ultima visita; sparisce non appena si apre la sezione.
+* Nuovo: sezione "Statistiche" nella Dashboard, riservata agli amministratori — eventi pubblicati/online/passati, luoghi e organizzatori pubblicati, utenti iscritti, visualizzazioni totali delle schede evento e classifica dei 5 eventi più visualizzati.
 
 = 1.1.1 =
 * Fix: nel datepicker del widget Ricerca Eventi, passare il mouse sui numeri del calendario rendeva il testo bianco su sfondo bianco (hover CSS sovrascriveva il colore di sfondo accent dei giorni selezionati senza ripristinare il colore del testo). La regola hover ora esclude i giorni con classe is-start/is-end/is-single.
