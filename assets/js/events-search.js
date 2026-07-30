@@ -255,7 +255,8 @@ class OpenEventsSearchHandler extends elementorModules.frontend.handlers.Base {
                 dateLabel:    '.oes-date-label',
                 chip:         '.oes-chip',
                 reset:        '.oes-reset',
-                results:      '.oes-results'
+                results:      '.oes-results',
+                viewBtn:      '.oes-view-btn'
             }
         };
     }
@@ -270,7 +271,8 @@ class OpenEventsSearchHandler extends elementorModules.frontend.handlers.Base {
             $dateLabel:   this.$element.find(s.dateLabel),
             $chips:       this.$element.find(s.chip),
             $reset:       this.$element.find(s.reset),
-            $results:     this.$element.find(s.results)
+            $results:     this.$element.find(s.results),
+            $viewBtns:    this.$element.find(s.viewBtn)
         };
     }
 
@@ -286,6 +288,37 @@ class OpenEventsSearchHandler extends elementorModules.frontend.handlers.Base {
         this.elements.$category.on('change', () => this.runSearch());
 
         this.initDatePicker();
+        this.initView();
+
+        if (this.elements.$comune.length) {
+            this.elements.$results.addClass('is-comune-clickable');
+            this.elements.$results.on('click', '.oes-card-place', (e) => {
+                if (!this.elements.$results.hasClass('is-list')) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const comune = jQuery(e.currentTarget).text().trim();
+                if (!comune) return;
+                this.elements.$comune.val(comune);
+                this.runSearch();
+            });
+        }
+
+        this.elements.$results.on('click', '.oes-card-share', (e) => this.shareCard(e));
+
+        // La card è un <article tabindex="0">, non più un <a>: naviga al click
+        // ovunque tranne che sui link/bottoni interni (titolo, condividi), che
+        // gestiscono già da soli il proprio comportamento.
+        this.elements.$results.on('click', '.oes-card', (e) => {
+            if (jQuery(e.target).closest('a, button').length) return;
+            window.location.href = jQuery(e.currentTarget).data('href');
+        });
+
+        this.elements.$results.on('keydown', '.oes-card', (e) => {
+            if (e.target !== e.currentTarget) return;
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            window.location.href = jQuery(e.currentTarget).data('href');
+        });
 
         this.elements.$chips.on('click', (e) => {
             const mode = jQuery(e.currentTarget).data('dateMode');
@@ -315,6 +348,43 @@ class OpenEventsSearchHandler extends elementorModules.frontend.handlers.Base {
                 this.runSearch();
             }
         );
+    }
+
+    initView() {
+        this.setView(localStorage.getItem('oes_view') || 'grid', false);
+        this.elements.$viewBtns.on('click', (e) => {
+            this.setView(jQuery(e.currentTarget).data('view'), true);
+        });
+    }
+
+    setView(view, save) {
+        view = view === 'list' ? 'list' : 'grid';
+        this.elements.$results.toggleClass('is-list', view === 'list');
+        this.elements.$viewBtns.each(function () {
+            const $btn   = jQuery(this);
+            const active = $btn.data('view') === view;
+            $btn.toggleClass('is-active', active).attr('aria-pressed', active);
+        });
+        if (save) localStorage.setItem('oes_view', view);
+    }
+
+    shareCard(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const $btn  = jQuery(e.currentTarget);
+        const title = $btn.data('title');
+        const url   = $btn.data('url');
+
+        if (navigator.share) {
+            navigator.share({ title, url }).catch(() => {});
+            return;
+        }
+
+        navigator.clipboard.writeText(url).then(() => {
+            $btn.addClass('is-copied');
+            setTimeout(() => $btn.removeClass('is-copied'), 1500);
+        });
     }
 
     setActiveChip(mode) {

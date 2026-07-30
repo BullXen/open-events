@@ -430,7 +430,17 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 				<button type="button" class="oes-chip" data-date-mode="today"><?php esc_html_e( 'Oggi', 'open-events' ); ?></button>
 				<button type="button" class="oes-chip" data-date-mode="week"><?php esc_html_e( 'Questa settimana', 'open-events' ); ?></button>
 				<button type="button" class="oes-chip" data-date-mode="month"><?php esc_html_e( 'Questo mese', 'open-events' ); ?></button>
+
 				<button type="button" class="oes-reset" hidden><?php esc_html_e( 'Azzera filtri', 'open-events' ); ?></button>
+
+				<div class="oes-view-toggle" role="group" aria-label="<?php esc_attr_e( 'Modalità visualizzazione', 'open-events' ); ?>">
+					<button type="button" class="oes-view-btn is-active" data-view="grid" aria-pressed="true" aria-label="<?php esc_attr_e( 'Vista griglia', 'open-events' ); ?>">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+					</button>
+					<button type="button" class="oes-view-btn" data-view="list" aria-pressed="false" aria-label="<?php esc_attr_e( 'Vista lista', 'open-events' ); ?>">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+					</button>
+				</div>
 			</div>
 			<?php endif; ?>
 
