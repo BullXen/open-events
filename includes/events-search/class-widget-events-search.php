@@ -290,9 +290,11 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 				'description' => esc_html__( 'Si applica anche a "Azzera filtri" e alle icone griglia/lista.', 'open-events' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => [
-					'{{WRAPPER}} .oes-chip:not(.is-active):hover' => 'background: {{VALUE}};',
-					'{{WRAPPER}} .oes-reset:hover'                => 'background: {{VALUE}};',
-					'{{WRAPPER}} .oes-view-btn:hover'             => 'background: {{VALUE}};',
+					// !important: il tema forza uno sfondo rosa su [type="button"]:hover
+					// a specificità identica ai selettori di base del plugin.
+					'{{WRAPPER}} .oes-chip:not(.is-active):hover' => 'background: {{VALUE}} !important;',
+					'{{WRAPPER}} .oes-reset:hover'                => 'background: {{VALUE}} !important;',
+					'{{WRAPPER}} .oes-view-btn:hover'             => 'background: {{VALUE}} !important;',
 				],
 			]
 		);

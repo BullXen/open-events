@@ -486,7 +486,7 @@ p.em-section-subtitle {
     transition: background-color 0.2s ease;
 }
 .em-dropzone-remove:hover {
-    background-color: #dc2626;
+    background-color: #dc2626 !important;
 }
 
 /* Time Picker Customization */
@@ -726,7 +726,7 @@ p.em-section-subtitle {
     text-decoration: none !important;
 }
 .em-submit-btn:hover {
-    background-color: #0369a1;
+    background-color: #0369a1 !important;
 }
 .em-submit-btn.link-btn {
     padding: 10px 18px;
@@ -771,13 +771,13 @@ p.em-section-subtitle {
     transition: background-color 0.2s ease;
 }
 .em-secondary-btn:hover {
-    background-color: #334155;
+    background-color: #334155 !important;
 }
 .em-secondary-btn.btn-danger {
     background-color: #ef4444;
 }
 .em-secondary-btn.btn-danger:hover {
-    background-color: #dc2626;
+    background-color: #dc2626 !important;
 }
 
 /* Pulsanti azione icon-only nelle righe elenco: righe più pulite e compatte */
@@ -828,18 +828,345 @@ p.em-section-subtitle {
     color: #ffffff;
 }
 
-/* Recurrence box */
-.em-recurrence-rule-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
-    background: #ffffff;
-    padding: 20px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    margin-top: 15px;
+/* Evento con più date: pattern, giorni settimana, anteprima date generate */
+.em-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 16px 0;
 }
+.em-field-label-sm {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 8px;
+}
+.em-field-help {
+    font-size: 12px;
+    color: #94a3b8;
+    margin: 6px 0 0;
+    line-height: 1.4;
+}
+.em-pattern-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.em-pattern-btn {
+    padding: 10px 8px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.em-pattern-btn:hover {
+    /* !important: il tema forza uno sfondo rosa su [type="button"]:hover a
+       specificità identica alla nostra. */
+    background-color: #ffffff !important;
+    border-color: #94a3b8;
+}
+.em-pattern-btn.active {
+    border-color: #0284c7;
+    background: #f0f9ff;
+    color: #0284c7;
+}
+.em-pattern-btn.active:hover {
+    background-color: #f0f9ff !important;
+    border-color: #0284c7;
+}
+.em-days {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+.em-day-chip {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.em-day-chip:hover {
+    background-color: #ffffff !important;
+    border-color: #94a3b8;
+}
+.em-day-chip.active {
+    background: #0284c7;
+    border-color: #0284c7;
+    color: #ffffff;
+}
+.em-day-chip.active:hover {
+    background-color: #0284c7 !important;
+    border-color: #0284c7;
+}
+.em-preview {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 12px 14px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+.em-preview-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #94a3b8;
+    margin-bottom: 8px;
+}
+.em-preview-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-bottom: 5px;
+    font-size: 13px;
+}
+.em-preview-item:last-child {
+    margin-bottom: 0;
+}
+.em-preview-item.excluded {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+.em-preview-x, .em-preview-restore {
+    flex-shrink: 0;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+}
+.em-preview-x {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #fee2e2;
+    color: #dc2626;
+    font-size: 15px;
+    line-height: 1;
+}
+.em-preview-x:hover {
+    background: #fecaca !important;
+}
+.em-preview-restore {
+    background: none;
+    color: #0284c7;
+    text-decoration: underline;
+    padding: 2px 4px;
+}
+.em-preview-restore:hover {
+    background: none !important;
+    color: #0369a1;
+}
+.em-badge-extra, .em-badge-exc {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+}
+.em-badge-extra {
+    background: #dbeafe;
+    color: #2563eb;
+}
+.em-badge-exc {
+    background: #fef3c7;
+    color: #d97706;
+}
+.em-recurrence-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+/* Campo data: stesso trigger+calendario popup della barra di ricerca (Ricerca
+   Eventi). L'input nativo resta sotto, stessa area, invisibile: continua a
+   gestire name/value/required, il bottone sopra apre il calendario custom. */
+.em-date-field {
+    position: relative;
+}
+.em-date-native {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    z-index: 0;
+    padding: 0;
+    border: none;
+}
+.em-date-trigger {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #0f172a;
+    text-align: left;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.em-date-trigger:hover,
+.em-date-trigger:focus {
+    /* !important: il tema ha [type="button"]:hover/:focus con sfondo rosa a
+       specificità identica alla nostra — senza, vince a seconda dell'ordine
+       di caricamento dei fogli di stile. */
+    background-color: #ffffff !important;
+    border-color: #94a3b8;
+    outline: none;
+}
+.em-date-trigger.is-open {
+    border-color: #0284c7;
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.1);
+}
+.em-date-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: #64748b;
+}
+.em-date-label {
+    flex: 1;
+    color: #94a3b8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.em-date-trigger.has-value .em-date-label {
+    color: #0f172a;
+}
+.em-date-chevron {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: #94a3b8;
+    transition: transform 0.2s ease;
+}
+.em-date-trigger.is-open .em-date-chevron {
+    transform: rotate(180deg);
+}
+
+/* Popup calendario */
+.em-dp {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 50;
+    width: 280px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    padding: 12px;
+}
+.em-dp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.em-dp-month-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: capitalize;
+}
+.em-dp-nav {
+    display: flex;
+    gap: 4px;
+}
+.em-dp-prev, .em-dp-next {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+}
+.em-dp-prev:hover, .em-dp-next:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a;
+}
+.em-dp-prev svg, .em-dp-next svg {
+    width: 16px;
+    height: 16px;
+}
+.em-dp-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 4px;
+}
+.em-dp-weekday {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+.em-dp-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+.em-dp-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1e293b;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 0;
+    line-height: 1;
+    transition: background 0.1s, color 0.1s;
+}
+.em-dp-day.is-empty {
+    pointer-events: none;
+}
+.em-dp-day:not(.is-empty):not(.is-selected):hover {
+    background: #f0f9ff !important;
+    color: #0284c7;
+}
+.em-dp-day.is-today {
+    font-weight: 700;
+    color: #0284c7;
+}
+.em-dp-day.is-selected {
+    background: #0284c7;
+    color: #ffffff;
+    font-weight: 700;
+}
+
 .em-form-select-sm, .em-form-input-sm {
     padding: 8px 12px;
     font-size: 13px;

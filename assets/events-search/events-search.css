@@ -88,11 +88,16 @@ select.oes-input {
     cursor: pointer;
 }
 
-/* Neutralizza l'hover rosso bordeaux dei bottoni del tema: qui è un campo, non un CTA. */
-.oes-date-trigger:hover {
-    background: #f9fafb;
+/* Neutralizza hover/focus rosso bordeaux/rosa dei bottoni del tema: qui è un
+   campo, non un CTA. !important: il tema ha [type="button"]:hover/:focus a
+   specificità identica alla nostra — senza, vince a seconda dell'ordine di
+   caricamento dei fogli di stile. */
+.oes-date-trigger:hover,
+.oes-date-trigger:focus {
+    background: #f9fafb !important;
     color: inherit;
     border-color: var(--oes-border);
+    outline: none;
 }
 
 .oes-date-label {
@@ -176,7 +181,7 @@ select.oes-input {
     padding: 0;
 }
 
-.oes-dp-nav button:hover { background: #e5e7eb; }
+.oes-dp-nav button:hover { background: #e5e7eb !important; }
 
 .oes-dp-nav svg {
     width: 16px;
@@ -283,13 +288,16 @@ select.oes-input {
 
 .oes-chip:hover {
     color: var(--oes-text);
-    background: #e9ebef;
+    background: #e9ebef !important;
 }
 
 .oes-chip.is-active {
     color: #fff;
     background: var(--oes-accent);
     border-color: var(--oes-accent);
+}
+.oes-chip.is-active:hover {
+    background: var(--oes-accent) !important;
 }
 
 .oes-reset {
@@ -307,6 +315,7 @@ select.oes-input {
 
 .oes-reset:hover {
     color: var(--oes-text);
+    background: transparent !important;
 }
 
 .oes-view-toggle {
@@ -339,12 +348,16 @@ select.oes-input {
 
 .oes-view-btn:hover {
     color: var(--oes-text);
+    background: transparent !important;
 }
 
 .oes-view-btn.is-active {
     color: var(--oes-text);
     background: #fff;
     box-shadow: 0 1px 2px rgba(16, 24, 40, .08);
+}
+.oes-view-btn.is-active:hover {
+    background: #fff !important;
 }
 
 .oes-view-btn:focus-visible {
@@ -734,7 +747,7 @@ select.oes-input {
 }
 
 .oes-results.is-list .oes-card-share:hover {
-    background: #eef2ff;
+    background: #eef2ff !important;
     color: var(--oes-accent);
 }
 

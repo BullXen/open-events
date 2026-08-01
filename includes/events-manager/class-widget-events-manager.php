@@ -327,6 +327,27 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
     }
 
     /**
+     * Campo data con lo stesso stile "trigger + calendario popup" della barra
+     * di ricerca: l'input nativo resta nel DOM (stessa posizione, invisibile)
+     * cosi' name/value/required continuano a funzionare come prima; sopra ci
+     * clicca il bottone che apre il calendario custom (vedi EmDatePicker in
+     * events-manager.js).
+     */
+    private function render_date_field( $name, $id, $value ) {
+        $required = in_array( $name, [ 'EventStartDate', 'EventEndDate' ], true );
+        ?>
+        <div class="em-date-field">
+            <input type="date" <?php echo $name ? 'name="' . esc_attr( $name ) . '"' : ''; ?> id="<?php echo esc_attr( $id ); ?>" class="em-date-native" value="<?php echo esc_attr( $value ); ?>" <?php echo $required ? 'required' : ''; ?>>
+            <button type="button" class="em-date-trigger" data-for="<?php echo esc_attr( $id ); ?>" aria-haspopup="true" aria-expanded="false">
+                <svg class="em-date-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+                <span class="em-date-label"><?php esc_html_e( 'Scegli una data', 'open-events' ); ?></span>
+                <svg class="em-date-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+        </div>
+        <?php
+    }
+
+    /**
      * Quanti elementi di $post_type sono stati aggiunti dall'ultima visita
      * dell'utente a quella sezione. Alla primissima visita in assoluto (nessun
      * meta salvato) non mostriamo mai un conteggio: inizializza e basta,
@@ -364,6 +385,45 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
     /** Segna $post_type come "visto adesso" per l'utente: azzera il badge. */
     private function hub_mark_seen( $post_type, $current_user_id ) {
         update_user_meta( $current_user_id, '_oe_hub_seen_' . $post_type, time() );
+    }
+
+    /** Pubblica subito un singolo post (usato sia per un elemento singolo che per ogni data di una serie). */
+    private function publish_post_now( $post_id ) {
+        $post = get_post( $post_id );
+        if ( ! $post ) {
+            return;
+        }
+
+        if ( empty( $post->post_name ) ) {
+            // Un post inserito come "in attesa" può non avere mai avuto uno
+            // slug/permalink generato: senza, l'URL pubblico dell'evento
+            // risulta rotto (404) anche a stato correttamente "publish".
+            $new_slug = wp_unique_post_slug( sanitize_title( $post->post_title ), $post_id, 'publish', $post->post_type, $post->post_parent );
+            wp_update_post( [ 'ID' => $post_id, 'post_name' => $new_slug ] );
+        }
+
+        // Se post_date è nel passato/futuro rispetto a "adesso" per qualsiasi
+        // motivo, wp_update_post() converte 'publish' in 'future' (post
+        // programmato, invisibile pubblicamente) invece di pubblicarlo
+        // davvero. Forziamo post_date a questo istante per evitarlo.
+        wp_update_post( [
+            'ID'            => $post_id,
+            'post_status'   => 'publish',
+            'post_date'     => current_time( 'mysql' ),
+            'post_date_gmt' => current_time( 'mysql', true ),
+        ] );
+
+        if ( 'publish' !== get_post_status( $post_id ) ) {
+            // Alcuni CPT (es. tribe_events di The Events Calendar) mappano le
+            // capability di pubblicazione in modo non standard e possono far
+            // fallire wp_update_post() in silenzio anche per un amministratore
+            // già verificato. Scrittura diretta + hook di transizione rilanciati
+            // a mano cosi' TEC resta sincronizzato.
+            open_events_force_post_status( $post_id, 'publish' );
+        } elseif ( 'tribe_events' === $post->post_type ) {
+            // Ricostruisce evento + occorrenze nelle custom tables di TEC 6.
+            open_events_sync_event_custom_tables( $post_id );
+        }
     }
 
     protected function render() {
@@ -413,39 +473,29 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     echo '<script type="text/javascript">window.location.href = "' . esc_url_raw( $redirect_back ) . '";</script>';
                     return;
                 } elseif ( 'publish' === $requested_action ) {
-                    if ( empty( $target_post->post_name ) ) {
-                        // Un post inserito come "in attesa" può non avere mai avuto uno
-                        // slug/permalink generato: senza, l'URL pubblico dell'evento
-                        // risulta rotto (404) anche a stato correttamente "publish".
-                        $new_slug = wp_unique_post_slug( sanitize_title( $target_post->post_title ), $target_id, 'publish', $target_post->post_type, $target_post->post_parent );
-                        wp_update_post( [ 'ID' => $target_id, 'post_name' => $new_slug ] );
+                    $this->publish_post_now( $target_id );
+
+                    // Evento con più date: pubblicandone una si confermano tutte le
+                    // altre della stessa serie, cosi' l'utente non deve ripetere
+                    // l'azione manualmente per ognuna.
+                    if ( 'tribe_events' === $target_post->post_type ) {
+                        $series_id = get_post_meta( $target_id, '_oe_series_id', true );
+                        if ( $series_id ) {
+                            $sibling_ids = get_posts( [
+                                'post_type'      => 'tribe_events',
+                                'post_status'    => [ 'draft', 'pending', 'future' ],
+                                'posts_per_page' => -1,
+                                'fields'         => 'ids',
+                                'meta_key'       => '_oe_series_id',
+                                'meta_value'     => $series_id,
+                                'exclude'        => [ $target_id ],
+                            ] );
+                            foreach ( $sibling_ids as $sibling_id ) {
+                                $this->publish_post_now( $sibling_id );
+                            }
+                        }
                     }
 
-                    // Se post_date è nel passato/futuro rispetto a "adesso" per qualsiasi
-                    // motivo, wp_update_post() converte 'publish' in 'future' (post
-                    // programmato, invisibile pubblicamente) invece di pubblicarlo
-                    // davvero. Forziamo post_date a questo istante per evitarlo.
-                    wp_update_post( [
-                        'ID'            => $target_id,
-                        'post_status'   => 'publish',
-                        'post_date'     => current_time( 'mysql' ),
-                        'post_date_gmt' => current_time( 'mysql', true ),
-                    ] );
-
-                    if ( 'publish' !== get_post_status( $target_id ) ) {
-                        // Alcuni CPT (es. tribe_events di The Events Calendar) mappano le
-                        // capability di pubblicazione in modo non standard e possono far
-                        // fallire wp_update_post() in silenzio anche per un amministratore
-                        // già verificato sopra tramite $is_admin_view. Scrittura diretta +
-                        // hook di transizione rilanciati a mano cosi' TEC resta sincronizzato.
-                        open_events_force_post_status( $target_id, 'publish' );
-                    } elseif ( 'tribe_events' === $target_post->post_type ) {
-                        // Ricostruisce evento + occorrenze nelle custom tables di TEC 6:
-                        // copre gli eventi creati prima di questa fix, che non hanno mai
-                        // generato un'occorrenza e restano invisibili nel calendario
-                        // pubblico nonostante post_status corretto.
-                        open_events_sync_event_custom_tables( $target_id );
-                    }
                     echo '<script type="text/javascript">window.location.href = "' . esc_url_raw( $redirect_back ) . '";</script>';
                     return;
                 }
@@ -527,72 +577,8 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     }
                 }
             }
-            ?>
-            <div class="em-form-container em-form-view">
-                <?php
-                $this->render_breadcrumbs( [
-                    [ 'label' => esc_html__( 'Dashboard', 'open-events' ), 'url' => remove_query_arg( [ 'view' ] ) ],
-                    [ 'label' => esc_html__( 'Profilo', 'open-events' ), 'url' => '' ],
-                ] );
-                ?>
-                <div class="em-back-link">
-                    <a href="<?php echo esc_url( remove_query_arg( [ 'view' ] ) ); ?>">← <?php esc_html_e( 'Torna alla Dashboard', 'open-events' ); ?></a>
-                </div>
+            include OPEN_EVENTS_PLUGIN_DIR . 'includes/events-manager/templates/profile.php';
 
-                <h2><?php esc_html_e( 'Modifica Profilo', 'open-events' ); ?></h2>
-
-                <?php if ( $profile_success ): ?>
-                    <div class="em-alert success"><?php echo esc_html( $profile_success ); ?></div>
-                <?php endif; ?>
-                <?php if ( $profile_error ): ?>
-                    <div class="em-alert error"><?php echo esc_html( $profile_error ); ?></div>
-                <?php endif; ?>
-
-                <form method="POST">
-                    <?php wp_nonce_field( 'profile_save', 'profile_nonce' ); ?>
-                    <input type="hidden" name="profile_submit" value="1">
-
-                    <div class="em-form-group">
-                        <label><?php esc_html_e( 'Username (non modificabile)', 'open-events' ); ?></label>
-                        <input type="text" value="<?php echo esc_attr( $current_user->user_login ); ?>" disabled style="background-color:#f0f2f5;">
-                    </div>
-
-                    <div class="em-form-group">
-                        <label><?php esc_html_e( 'Nome', 'open-events' ); ?></label>
-                        <input type="text" name="first_name" value="<?php echo esc_attr( $current_user->first_name ); ?>">
-                    </div>
-
-                    <div class="em-form-group">
-                        <label><?php esc_html_e( 'Cognome', 'open-events' ); ?></label>
-                        <input type="text" name="last_name" value="<?php echo esc_attr( $current_user->last_name ); ?>">
-                    </div>
-
-                    <div class="em-form-group">
-                        <label><?php esc_html_e( 'Email', 'open-events' ); ?></label>
-                        <input type="email" name="email" value="<?php echo esc_attr( $current_user->user_email ); ?>" required>
-                    </div>
-
-                    <div class="em-form-group">
-                        <label><?php esc_html_e( 'Sito Web', 'open-events' ); ?></label>
-                        <input type="url" name="website" value="<?php echo esc_attr( $current_user->user_url ); ?>">
-                    </div>
-
-                    <div class="em-form-group">
-                        <label><?php esc_html_e( 'Nuova Password (lascia vuoto per non cambiare)', 'open-events' ); ?></label>
-                        <input type="password" name="pass1" autocomplete="new-password">
-                    </div>
-
-                    <div class="em-form-group">
-                        <label><?php esc_html_e( 'Conferma Nuova Password', 'open-events' ); ?></label>
-                        <input type="password" name="pass2" autocomplete="new-password">
-                    </div>
-
-                    <button type="submit" class="em-submit-btn">
-                        <?php esc_html_e( 'Salva Profilo', 'open-events' ); ?>
-                    </button>
-                </form>
-            </div>
-            <?php
             if ( $show_sidebar ) {
                 echo '</div></div>';
             }
@@ -666,94 +652,9 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
 
             $all_users = get_users( [ 'orderby' => 'registered', 'order' => 'DESC' ] );
             $date_format = get_option( 'date_format' );
-            ?>
-            <div class="em-form-container em-dashboard-view em-users-view">
-                <?php $this->render_breadcrumbs( [
-                    [ 'label' => esc_html__( 'Dashboard', 'open-events' ), 'url' => remove_query_arg( [ 'view', 'oe_user_action', 'user_id', '_wpnonce' ] ) ],
-                    [ 'label' => esc_html__( 'Utenti', 'open-events' ), 'url' => '' ],
-                ] ); ?>
 
-                <div class="em-back-link">
-                    <a href="<?php echo esc_url( remove_query_arg( [ 'view', 'oe_user_action', 'user_id', '_wpnonce' ] ) ); ?>">&larr; <?php esc_html_e( 'Torna alla Dashboard', 'open-events' ); ?></a>
-                </div>
+            include OPEN_EVENTS_PLUGIN_DIR . 'includes/events-manager/templates/users.php';
 
-                <div class="em-dashboard-header">
-                    <h2><?php $this->render_icon( 'users' ); ?> <?php esc_html_e( 'Utenti iscritti', 'open-events' ); ?> <span class="em-count-badge"><?php echo count( $all_users ); ?></span></h2>
-                </div>
-
-                <?php if ( $users_notice ) : ?>
-                    <div class="em-alert success"><?php echo esc_html( $users_notice ); ?></div>
-                <?php endif; ?>
-                <?php if ( $users_error ) : ?>
-                    <div class="em-alert error"><?php echo esc_html( $users_error ); ?></div>
-                <?php endif; ?>
-
-                <div class="em-items-list em-users-list">
-                    <?php foreach ( $all_users as $u ) :
-                        $u_roles = (array) $u->roles;
-                        $primary_role = $u_roles[0] ?? '';
-                        $role_label = isset( $editable_roles[ $primary_role ] ) ? translate_user_role( $editable_roles[ $primary_role ]['name'] ) : $primary_role;
-                        $event_count = count_user_posts( $u->ID, 'tribe_events' );
-                        $is_self = ( $u->ID === $current_user_id );
-                        $is_admin_user = in_array( 'administrator', $u_roles, true );
-                        $edit_link = admin_url( 'user-edit.php?user_id=' . $u->ID );
-                        $delete_url = wp_nonce_url(
-                            add_query_arg( [ 'oe_user_action' => 'delete', 'user_id' => $u->ID ], remove_query_arg( [ 'oe_user_action', 'user_id', '_wpnonce' ] ) ),
-                            'oe_user_delete_' . $u->ID
-                        );
-                        ?>
-                        <div class="em-item-row em-user-row">
-                            <span class="em-item-thumb em-user-avatar"><?php echo get_avatar( $u->ID, 44 ); ?></span>
-                            <div class="em-item-info">
-                                <strong class="em-item-title">
-                                    <?php echo esc_html( $u->display_name ); ?>
-                                    <span class="em-user-login">@<?php echo esc_html( $u->user_login ); ?></span>
-                                    <?php if ( $is_self ) : ?>
-                                        <span class="em-featured-badge"><?php esc_html_e( 'Tu', 'open-events' ); ?></span>
-                                    <?php endif; ?>
-                                </strong>
-                                <span class="em-item-meta">
-                                    <a href="mailto:<?php echo esc_attr( $u->user_email ); ?>"><?php echo esc_html( $u->user_email ); ?></a>
-                                    · <?php echo esc_html( $role_label ); ?>
-                                    · <?php printf( esc_html__( 'iscritto il %s', 'open-events' ), esc_html( date_i18n( $date_format, strtotime( $u->user_registered ) ) ) ); ?>
-                                    · <?php printf( esc_html( _n( '%d evento', '%d eventi', (int) $event_count, 'open-events' ) ), (int) $event_count ); ?>
-                                </span>
-                            </div>
-
-                            <?php // Cambio ruolo (bloccato per se stessi e per l'ultimo admin)
-                            $lock_role = $is_self || ( $is_admin_user && $admin_count <= 1 );
-                            ?>
-                            <form method="post" class="em-user-role-form">
-                                <?php wp_nonce_field( 'oe_user_role', 'oe_user_role_nonce' ); ?>
-                                <input type="hidden" name="oe_user_id" value="<?php echo esc_attr( $u->ID ); ?>">
-                                <select name="oe_user_role" class="em-user-role-select" <?php disabled( $lock_role ); ?> aria-label="<?php esc_attr_e( 'Ruolo utente', 'open-events' ); ?>">
-                                    <?php foreach ( $editable_roles as $role_key => $role_data ) : ?>
-                                        <option value="<?php echo esc_attr( $role_key ); ?>" <?php selected( $primary_role, $role_key ); ?>>
-                                            <?php echo esc_html( translate_user_role( $role_data['name'] ) ); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <?php if ( ! $lock_role ) : ?>
-                                    <button type="submit" name="oe_user_role_submit" value="1" class="em-action-btn" title="<?php esc_attr_e( 'Salva ruolo', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Salva ruolo', 'open-events' ); ?>">
-                                        <?php $this->render_icon( 'check' ); ?>
-                                    </button>
-                                <?php endif; ?>
-                            </form>
-
-                            <a href="<?php echo esc_url( $edit_link ); ?>" class="em-action-btn edit-btn" target="_blank" rel="noopener noreferrer" title="<?php esc_attr_e( 'Modifica in wp-admin', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Modifica in wp-admin', 'open-events' ); ?>">
-                                <?php $this->render_icon( 'edit' ); ?>
-                            </a>
-
-                            <?php if ( ! $is_self && ! $is_admin_user ) : ?>
-                                <a href="<?php echo esc_url( $delete_url ); ?>" class="em-action-btn delete-btn" onclick="return confirm('<?php echo esc_js( __( 'Eliminare questo utente? I suoi eventi/luoghi/organizzatori verranno riassegnati al tuo account. Operazione non annullabile.', 'open-events' ) ); ?>');" title="<?php esc_attr_e( 'Elimina utente', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Elimina utente', 'open-events' ); ?>">
-                                    <?php $this->render_icon( 'trash' ); ?>
-                                </a>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php
             if ( $show_sidebar ) {
                 echo '</div></div>';
             }
@@ -825,46 +726,9 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                 [ 'icon' => 'users',    'label' => esc_html__( 'Utenti iscritti', 'open-events' ),    'value' => $total_users ],
                 [ 'icon' => 'eye',      'label' => esc_html__( 'Visualizzazioni schede evento', 'open-events' ), 'value' => $total_views ],
             ];
-            ?>
-            <div class="em-form-container em-dashboard-view em-stats-view">
-                <?php $this->render_breadcrumbs( [
-                    [ 'label' => esc_html__( 'Dashboard', 'open-events' ), 'url' => remove_query_arg( 'view' ) ],
-                    [ 'label' => esc_html__( 'Statistiche', 'open-events' ), 'url' => '' ],
-                ] ); ?>
 
-                <div class="em-back-link">
-                    <a href="<?php echo esc_url( remove_query_arg( 'view' ) ); ?>">&larr; <?php esc_html_e( 'Torna alla Dashboard', 'open-events' ); ?></a>
-                </div>
+            include OPEN_EVENTS_PLUGIN_DIR . 'includes/events-manager/templates/stats.php';
 
-                <div class="em-dashboard-header">
-                    <h2><?php $this->render_icon( 'chart' ); ?> <?php esc_html_e( 'Statistiche', 'open-events' ); ?></h2>
-                </div>
-
-                <div class="em-stats-grid">
-                    <?php foreach ( $stat_tiles as $tile ) : ?>
-                        <div class="em-stat-tile">
-                            <div class="em-stat-icon"><?php $this->render_icon( $tile['icon'] ); ?></div>
-                            <span class="em-stat-value"><?php echo esc_html( number_format_i18n( $tile['value'] ) ); ?></span>
-                            <span class="em-stat-label"><?php echo esc_html( $tile['label'] ); ?></span>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-
-                <?php if ( $top_viewed ) : ?>
-                    <h3 class="em-stats-subheading"><?php esc_html_e( 'Eventi più visualizzati', 'open-events' ); ?></h3>
-                    <div class="em-items-list em-stats-top-list">
-                        <?php foreach ( $top_viewed as $row ) : ?>
-                            <div class="em-item-row">
-                                <div class="em-item-info">
-                                    <strong class="em-item-title"><?php echo esc_html( $row->post_title ); ?></strong>
-                                </div>
-                                <span class="em-count-badge"><?php echo esc_html( number_format_i18n( (int) $row->views ) ); ?></span>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-            <?php
             if ( $show_sidebar ) {
                 echo '</div></div>';
             }
@@ -876,102 +740,9 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             $hub_new_events     = $this->hub_new_count( 'tribe_events', $is_admin_view, $current_user_id );
             $hub_new_venues     = $this->hub_new_count( 'tribe_venue', $is_admin_view, $current_user_id );
             $hub_new_organizers = $this->hub_new_count( 'tribe_organizer', $is_admin_view, $current_user_id );
-            ?>
-            <div class="em-form-container em-hub-view">
-                <div class="em-hub-header">
-                    <div class="em-hub-user">
-                        <?php echo get_avatar( $current_user_id, 48 ); ?>
-                        <div class="em-hub-user-meta">
-                            <h3><?php printf( esc_html__( 'Ciao, %s!', 'open-events' ), esc_html( $current_user->display_name ) ); ?></h3>
-                            <p><?php esc_html_e( 'Benvenuto nella tua Dashboard', 'open-events' ); ?></p>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="em-hub-grid">
-                    <!-- I Miei Eventi -->
-                    <a href="<?php echo esc_url( add_query_arg( 'view', 'tribe_events' ) ); ?>" class="em-hub-card em-events-card">
-                        <?php if ( $hub_new_events > 0 ) : ?>
-                            <span class="em-hub-badge"><?php echo esc_html( $hub_new_events ); ?></span>
-                        <?php endif; ?>
-                        <div class="em-card-icon">
-                            <?php $this->render_icon( 'calendar' ); ?>
-                        </div>
-                        <h4><?php esc_html_e( 'I Miei Eventi', 'open-events' ); ?></h4>
-                        <p><?php esc_html_e( 'Crea e gestisci i tuoi eventi del calendario, date e descrizioni.', 'open-events' ); ?></p>
-                        <span class="em-card-btn"><?php esc_html_e( 'Accedi', 'open-events' ); ?> &rarr;</span>
-                    </a>
+            include OPEN_EVENTS_PLUGIN_DIR . 'includes/events-manager/templates/hub.php';
 
-                    <!-- I Miei Luoghi -->
-                    <a href="<?php echo esc_url( add_query_arg( 'view', 'tribe_venue' ) ); ?>" class="em-hub-card">
-                        <?php if ( $hub_new_venues > 0 ) : ?>
-                            <span class="em-hub-badge"><?php echo esc_html( $hub_new_venues ); ?></span>
-                        <?php endif; ?>
-                        <div class="em-card-icon">
-                            <?php $this->render_icon( 'map-pin' ); ?>
-                        </div>
-                        <h4><?php esc_html_e( 'I Miei Luoghi', 'open-events' ); ?></h4>
-                        <p><?php esc_html_e( 'Gestisci indirizzi, città, CAP e dettagli dei tuoi luoghi.', 'open-events' ); ?></p>
-                        <span class="em-card-btn"><?php esc_html_e( 'Accedi', 'open-events' ); ?> &rarr;</span>
-                    </a>
-
-                    <!-- I Miei Organizzatori -->
-                    <a href="<?php echo esc_url( add_query_arg( 'view', 'tribe_organizer' ) ); ?>" class="em-hub-card">
-                        <?php if ( $hub_new_organizers > 0 ) : ?>
-                            <span class="em-hub-badge"><?php echo esc_html( $hub_new_organizers ); ?></span>
-                        <?php endif; ?>
-                        <div class="em-card-icon">
-                            <?php $this->render_icon( 'person' ); ?>
-                        </div>
-                        <h4><?php esc_html_e( 'I Miei Organizzatori', 'open-events' ); ?></h4>
-                        <p><?php esc_html_e( 'Gestisci dettagli dei tuoi organizzatori, telefono, sito web e loghi.', 'open-events' ); ?></p>
-                        <span class="em-card-btn"><?php esc_html_e( 'Accedi', 'open-events' ); ?> &rarr;</span>
-                    </a>
-
-                    <?php if ( $is_admin_view ) : ?>
-                        <!-- Utenti (solo admin) -->
-                        <a href="<?php echo esc_url( add_query_arg( 'view', 'users' ) ); ?>" class="em-hub-card em-users-card">
-                            <div class="em-card-icon">
-                                <?php $this->render_icon( 'users' ); ?>
-                            </div>
-                            <h4><?php esc_html_e( 'Utenti', 'open-events' ); ?></h4>
-                            <p><?php esc_html_e( 'Vedi tutti gli utenti iscritti, cambia il loro ruolo o eliminali.', 'open-events' ); ?></p>
-                            <span class="em-card-btn"><?php esc_html_e( 'Accedi', 'open-events' ); ?> &rarr;</span>
-                        </a>
-
-                        <!-- Statistiche (solo admin) -->
-                        <a href="<?php echo esc_url( add_query_arg( 'view', 'stats' ) ); ?>" class="em-hub-card em-stats-card">
-                            <div class="em-card-icon">
-                                <?php $this->render_icon( 'chart' ); ?>
-                            </div>
-                            <h4><?php esc_html_e( 'Statistiche', 'open-events' ); ?></h4>
-                            <p><?php esc_html_e( 'Eventi pubblicati, online, visualizzazioni schede e altri numeri chiave.', 'open-events' ); ?></p>
-                            <span class="em-card-btn"><?php esc_html_e( 'Accedi', 'open-events' ); ?> &rarr;</span>
-                        </a>
-                    <?php endif; ?>
-
-                    <?php if ( ! empty( $settings['custom_buttons'] ) ) : ?>
-                        <?php foreach ( $settings['custom_buttons'] as $item ) :
-                            $target = $item['button_link']['is_external'] ? ' target="_blank"' : '';
-                            $nofollow = $item['button_link']['nofollow'] ? ' rel="nofollow"' : '';
-                            ?>
-                            <a href="<?php echo esc_url( $item['button_link']['url'] ); ?>" class="em-hub-card em-custom-card"<?php echo $target . $nofollow; ?>>
-                                <div class="em-card-icon">
-                                    <?php if ( ! empty( $item['button_icon']['value'] ) ) : ?>
-                                        <?php \Elementor\Icons_Manager::render_icon( $item['button_icon'], [ 'aria-hidden' => 'true' ] ); ?>
-                                    <?php else: ?>
-                                        <?php $this->render_icon( 'link' ); ?>
-                                    <?php endif; ?>
-                                </div>
-                                <h4><?php echo esc_html( $item['button_text'] ); ?></h4>
-                                <p><?php echo esc_html( $item['button_desc'] ); ?></p>
-                                <span class="em-card-btn"><?php esc_html_e( 'Apri', 'open-events' ); ?> &rarr;</span>
-                            </a>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </div>
-            <?php
             if ( $show_sidebar ) {
                 echo '</div></div>';
             }
@@ -1362,6 +1133,94 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                             }
                         }
 
+                        // Evento con più date: alla creazione (mai in modifica, per non
+                        // rigenerare la serie ad ogni salvataggio) $post_id copre già la
+                        // prima data; per le altre cloniamo titolo/descrizione/luogo/
+                        // organizzatore/categoria/immagine come nuovi eventi indipendenti,
+                        // stessi orari, data diversa — collegati da _oe_series_id.
+                        if ( 'edit' !== $current_action && ! empty( $_POST['em_series_dates'] ) ) {
+                            $series_dates = json_decode( stripslashes( $_POST['em_series_dates'] ), true );
+                            if ( is_array( $series_dates ) ) {
+                                $active_dates = array_values( array_filter( $series_dates, function( $d ) {
+                                    return empty( $d['excluded'] ) && ! empty( $d['date'] );
+                                } ) );
+                                usort( $active_dates, function( $a, $b ) {
+                                    return strcmp( $a['date'], $b['date'] );
+                                } );
+
+                                if ( $active_dates ) {
+                                    $start_tod = ( 'yes' === $is_all_day ) ? '00:00:00' : sprintf(
+                                        '%s:%s:00',
+                                        sanitize_text_field( $_POST['EventStartHour'] ?? '00' ),
+                                        sanitize_text_field( $_POST['EventStartMinute'] ?? '00' )
+                                    );
+                                    $end_tod = ( 'yes' === $is_all_day ) ? '23:59:59' : sprintf(
+                                        '%s:%s:00',
+                                        sanitize_text_field( $_POST['EventEndHour'] ?? '00' ),
+                                        sanitize_text_field( $_POST['EventEndMinute'] ?? '00' )
+                                    );
+
+                                    // La prima data in ordine cronologico è sempre quella del
+                                    // post corrente: la fissiamo qui invece di fidarci del campo
+                                    // "Data Inizio" perché con "Date libere" quel campo è
+                                    // indipendente dall'elenco date e poteva disallinearsi,
+                                    // facendo sparire la prima data della serie.
+                                    $primary_date = sanitize_text_field( $active_dates[0]['date'] );
+                                    update_post_meta( $post_id, '_EventStartDate', $primary_date . ' ' . $start_tod );
+                                    update_post_meta( $post_id, '_EventEndDate', $primary_date . ' ' . $end_tod );
+                                    do_action( 'save_post_tribe_events', $post_id, get_post( $post_id ), true );
+                                    open_events_sync_event_custom_tables( $post_id );
+                                }
+
+                                $extra_dates = array_slice( $active_dates, 1 );
+
+                                if ( $extra_dates ) {
+                                    update_post_meta( $post_id, '_oe_series_id', $post_id );
+                                    $primary_author = get_post_field( 'post_author', $post_id );
+
+                                    foreach ( $extra_dates as $d ) {
+                                        $clone_date = sanitize_text_field( $d['date'] );
+                                        if ( ! $clone_date ) {
+                                            continue;
+                                        }
+
+                                        $clone_id = wp_insert_post( [
+                                            'post_title'   => $title,
+                                            'post_content' => $content,
+                                            'post_type'    => 'tribe_events',
+                                            'post_status'  => get_post_status( $post_id ),
+                                            'post_author'  => $primary_author,
+                                        ], true );
+                                        if ( is_wp_error( $clone_id ) ) {
+                                            continue;
+                                        }
+
+                                        update_post_meta( $clone_id, '_EventAllDay', $is_all_day );
+                                        update_post_meta( $clone_id, '_EventStartDate', $clone_date . ' ' . $start_tod );
+                                        update_post_meta( $clone_id, '_EventEndDate', $clone_date . ' ' . $end_tod );
+                                        update_post_meta( $clone_id, '_EventCost', get_post_meta( $post_id, '_EventCost', true ) );
+                                        update_post_meta( $clone_id, '_EventURL', get_post_meta( $post_id, '_EventURL', true ) );
+                                        update_post_meta( $clone_id, '_oe_series_id', $post_id );
+                                        if ( ! empty( $venue_id ) ) {
+                                            update_post_meta( $clone_id, '_EventVenueID', intval( $venue_id ) );
+                                        }
+                                        if ( ! empty( $org_id ) ) {
+                                            update_post_meta( $clone_id, '_EventOrganizerID', intval( $org_id ) );
+                                        }
+                                        if ( ! empty( $cat_ids ) ) {
+                                            wp_set_object_terms( $clone_id, $cat_ids, 'tribe_events_cat' );
+                                        }
+                                        if ( isset( $attachment_id ) && ! is_wp_error( $attachment_id ) ) {
+                                            set_post_thumbnail( $clone_id, $attachment_id );
+                                        }
+
+                                        do_action( 'save_post_tribe_events', $clone_id, get_post( $clone_id ), false );
+                                        open_events_sync_event_custom_tables( $clone_id );
+                                    }
+                                }
+                            }
+                        }
+
                         $admin_email = get_option( 'admin_email' );
                         $subject = sprintf( esc_html__( 'Nuovo Evento Inserito: %s', 'open-events' ), $title );
                         $body = sprintf( "Un nuovo evento è stato inserito sul portale ed è in attesa di revisione.\n\nTitolo: %s\nAutore: %s\nData Inizio: %s\nData Fine: %s\n\nPuoi revisionarlo qui: %s", 
@@ -1560,13 +1419,13 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     $end_date = $end_parts[0] ?? '';
                     $end_time = isset( $end_parts[1] ) ? substr($end_parts[1], 0, 5) : '';
 
-                    $start_hour = '08';
+                    $start_hour = '18';
                     $start_min = '00';
                     if ( ! empty( $start_time ) && strpos( $start_time, ':' ) !== false ) {
                         list( $start_hour, $start_min ) = explode( ':', $start_time );
                     }
 
-                    $end_hour = '17';
+                    $end_hour = '22';
                     $end_min = '00';
                     if ( ! empty( $end_time ) && strpos( $end_time, ':' ) !== false ) {
                         list( $end_hour, $end_min ) = explode( ':', $end_time );
@@ -1592,67 +1451,19 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
 
                             <div class="em-form-group em-recurring-checkbox-group">
                                 <label class="em-checkbox-label">
-                                    <input type="checkbox" name="recurring_event" class="em-recurring-switch" value="yes" <?php checked( $is_recurring_val, 'yes' ); ?>>
-                                    <span><?php esc_html_e( 'Evento Ricorrente', 'open-events' ); ?></span>
+                                    <input type="checkbox" name="recurring_event" class="em-recurring-switch" value="yes" <?php checked( $is_recurring_val, 'yes' ); ?> <?php disabled( 'edit' === $current_action ); ?>>
+                                    <span><?php esc_html_e( 'Evento con più date (ricorrente)', 'open-events' ); ?></span>
                                 </label>
-                            </div>
-                        </div>
-
-                        <div class="em-recurring-wrapper em-hidden" id="em-recurring-details">
-                            <div class="em-recurrence-rule">
-                                <div class="em-recurrence-rule-row">
-                                    <span class="em-label"><?php esc_html_e( 'Ricorre', 'open-events' ); ?></span>
-                                    <select name="recurrence_rule_type" class="em-form-select-sm" style="width: auto; display: inline-block; margin-right: 10px;">
-                                        <option value="once"><?php esc_html_e( 'una volta', 'open-events' ); ?></option>
-                                        <option value="daily"><?php esc_html_e( 'ogni giorno', 'open-events' ); ?></option>
-                                        <option value="weekly"><?php esc_html_e( 'ogni settimana', 'open-events' ); ?></option>
-                                        <option value="monthly"><?php esc_html_e( 'ogni mese', 'open-events' ); ?></option>
-                                        <option value="yearly"><?php esc_html_e( 'ogni anno', 'open-events' ); ?></option>
-                                    </select>
-                                    <span class="em-label"><?php esc_html_e( 'il', 'open-events' ); ?></span>
-                                    <input type="date" name="recurrence_rule_date" class="em-form-input-sm" style="width: auto; display: inline-block; margin: 0 10px;">
-                                    <span class="em-label"><?php esc_html_e( 'dalle', 'open-events' ); ?></span>
-                                    <select name="recurrence_start_hour" class="em-form-select-sm" style="width: auto; display: inline-block;">
-                                        <?php foreach ( $hours_options as $hr ): ?>
-                                            <option value="<?php echo esc_attr($hr); ?>" <?php selected($hr, '08'); ?>><?php echo esc_html($hr); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    :
-                                    <select name="recurrence_start_minute" class="em-form-select-sm" style="width: auto; display: inline-block; margin-right: 10px;">
-                                        <?php foreach ( $minutes_options as $mn ): ?>
-                                            <option value="<?php echo esc_attr($mn); ?>" <?php selected($mn, '00'); ?>><?php echo esc_html($mn); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <span class="em-label"><?php esc_html_e( 'alle', 'open-events' ); ?></span>
-                                    <select name="recurrence_end_hour" class="em-form-select-sm" style="width: auto; display: inline-block;">
-                                        <?php foreach ( $hours_options as $hr ): ?>
-                                            <option value="<?php echo esc_attr($hr); ?>" <?php selected($hr, '17'); ?>><?php echo esc_html($hr); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    :
-                                    <select name="recurrence_end_minute" class="em-form-select-sm" style="width: auto; display: inline-block; margin-right: 10px;">
-                                        <?php foreach ( $minutes_options as $mn ): ?>
-                                            <option value="<?php echo esc_attr($mn); ?>" <?php selected($mn, '00'); ?>><?php echo esc_html($mn); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <span class="em-label"><?php esc_html_e( 'nel', 'open-events' ); ?></span>
-                                    <select name="recurrence_duration_type" class="em-form-select-sm" style="width: auto; display: inline-block;">
-                                        <option value="same_day"><?php esc_html_e( 'stesso giorno', 'open-events' ); ?></option>
-                                        <option value="next_day"><?php esc_html_e( 'giorno successivo', 'open-events' ); ?></option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <div class="em-recurrence-actions" style="margin-top: 15px;">
-                                <button type="button" class="em-secondary-btn" style="margin-right: 10px;"><?php esc_html_e( 'AGGIUNGI ALTRI EVENTI', 'open-events' ); ?></button>
-                                <button type="button" class="em-secondary-btn btn-danger"><?php esc_html_e( 'AGGIUNGI ECCEZIONE', 'open-events' ); ?></button>
+                                <?php if ( 'edit' === $current_action ) : ?>
+                                    <small class="em-field-help"><?php esc_html_e( 'Non modificabile in modifica: questa data fa parte di una serie, modifichi solo questa occorrenza.', 'open-events' ); ?></small>
+                                <?php endif; ?>
                             </div>
                         </div>
 
                         <div class="em-form-row-grid">
                             <div class="em-form-group">
                                 <label><?php esc_html_e( 'Data Inizio *', 'open-events' ); ?></label>
-                                <input type="date" name="EventStartDate" value="<?php echo esc_attr( $start_date ); ?>" required>
+                                <?php $this->render_date_field( 'EventStartDate', 'em_event_start_date', $start_date ); ?>
                             </div>
                             <div class="em-form-group em-time-field-group">
                                 <label><?php esc_html_e( 'Ora Inizio', 'open-events' ); ?></label>
@@ -1671,11 +1482,11 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="em-form-row-grid">
-                            <div class="em-form-group">
+                            <div class="em-form-group" id="em_end_date_group">
                                 <label><?php esc_html_e( 'Data Fine *', 'open-events' ); ?></label>
-                                <input type="date" name="EventEndDate" value="<?php echo esc_attr( $end_date ); ?>" required>
+                                <?php $this->render_date_field( 'EventEndDate', 'em_event_end_date', $end_date ); ?>
                             </div>
                             <div class="em-form-group em-time-field-group">
                                 <label><?php esc_html_e( 'Ora Fine', 'open-events' ); ?></label>
@@ -1693,6 +1504,55 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                                     </select>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="em-recurring-wrapper em-hidden" id="em-recurring-details">
+                            <div class="em-divider"></div>
+
+                            <div class="em-field-label-sm"><?php esc_html_e( 'Come si ripete?', 'open-events' ); ?></div>
+
+                            <div class="em-pattern-grid">
+                                <button type="button" class="em-pattern-btn active" data-pattern="daily">
+                                    <?php esc_html_e( 'Ogni giorno', 'open-events' ); ?>
+                                </button>
+                                <button type="button" class="em-pattern-btn" data-pattern="weekly">
+                                    <?php esc_html_e( 'Settimanale', 'open-events' ); ?>
+                                </button>
+                                <button type="button" class="em-pattern-btn" data-pattern="custom">
+                                    <?php esc_html_e( 'Date libere', 'open-events' ); ?>
+                                </button>
+                            </div>
+                            <input type="hidden" name="em_series_pattern" id="em_series_pattern" value="daily">
+
+                            <div id="em_weekly_days_wrapper" class="em-hidden">
+                                <label class="em-field-label-sm"><?php esc_html_e( 'Ripeti nei giorni:', 'open-events' ); ?></label>
+                                <div class="em-days" id="em_weekly_days">
+                                    <?php foreach ( [ 1 => 'L', 2 => 'M', 3 => 'M', 4 => 'G', 5 => 'V', 6 => 'S', 7 => 'D' ] as $dow => $label ) : ?>
+                                        <button type="button" class="em-day-chip" data-day="<?php echo esc_attr( $dow ); ?>"><?php echo esc_html( $label ); ?></button>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+
+                            <div class="em-form-row-grid" id="em_series_until_wrapper">
+                                <div class="em-form-group">
+                                    <label><?php esc_html_e( 'Ripeti fino al', 'open-events' ); ?></label>
+                                    <?php $this->render_date_field( '', 'em_series_until', '' ); ?>
+                                </div>
+                            </div>
+
+                            <div class="em-preview" id="em_series_preview">
+                                <div class="em-preview-title"><?php esc_html_e( 'Anteprima date', 'open-events' ); ?></div>
+                                <div id="em_preview_list"></div>
+                                <p class="em-field-help"><?php esc_html_e( 'Clicca × per escludere una data dalla pubblicazione.', 'open-events' ); ?></p>
+                            </div>
+
+                            <label class="em-field-label-sm"><?php esc_html_e( 'Inserisci data extra', 'open-events' ); ?></label>
+                            <div class="em-recurrence-actions">
+                                <?php $this->render_date_field( '', 'em_add_custom_date', '' ); ?>
+                                <button type="button" class="em-secondary-btn" id="em_add_custom_date_btn"><?php esc_html_e( '+ Aggiungi data', 'open-events' ); ?></button>
+                            </div>
+
+                            <input type="hidden" name="em_series_dates" id="em_series_dates" value="[]">
                         </div>
                     </div>
 
