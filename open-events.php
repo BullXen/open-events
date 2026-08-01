@@ -20,11 +20,11 @@ define( 'OPEN_EVENTS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 // Richiesto sempre (non solo in admin): il widget front-end legge
 // open_events_get_default_event_status() quando un utente salva un evento.
-require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/admin-settings.php';
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/core/admin-settings.php';
 
 // Richiesto sempre: registra gli handler AJAX della Ricerca Eventi, che
 // vengono serviti da admin-ajax.php (dove il widget Elementor non è caricato).
-require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/events-search.php';
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/events-search/events-search.php';
 
 /**
  * Porta in cima gli eventi "in primo piano" (_tribe_featured) anche nel
@@ -173,23 +173,23 @@ function open_events_register_category( $elements_manager ) {
 }
 
 function open_events_register_widgets( $widgets_manager ) {
-	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/class-widget-events-manager.php';
+	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/events-manager/class-widget-events-manager.php';
 	$widgets_manager->register( new \OpenEvents\Widget_Events_Manager() );
 
-	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/class-widget-events-search.php';
+	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/events-search/class-widget-events-search.php';
 	$widgets_manager->register( new \OpenEvents\Widget_Events_Search() );
 }
 
 function open_events_register_assets() {
 	wp_register_style(
 		'open-events-manager-style',
-		OPEN_EVENTS_PLUGIN_URL . 'assets/css/events-manager.css',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/events-manager/events-manager.css',
 		[],
 		OPEN_EVENTS_VERSION
 	);
 	wp_register_script(
 		'open-events-manager-script',
-		OPEN_EVENTS_PLUGIN_URL . 'assets/js/events-manager.js',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/events-manager/events-manager.js',
 		[ 'jquery', 'elementor-frontend' ],
 		OPEN_EVENTS_VERSION,
 		true
@@ -198,13 +198,13 @@ function open_events_register_assets() {
 	// Ricerca Eventi: stile + script della barra di ricerca live.
 	wp_register_style(
 		'open-events-search-style',
-		OPEN_EVENTS_PLUGIN_URL . 'assets/css/events-search.css',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/events-search/events-search.css',
 		[],
 		OPEN_EVENTS_VERSION
 	);
 	wp_register_script(
 		'open-events-search-script',
-		OPEN_EVENTS_PLUGIN_URL . 'assets/js/events-search.js',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/events-search/events-search.js',
 		[ 'jquery', 'elementor-frontend' ],
 		OPEN_EVENTS_VERSION,
 		true
