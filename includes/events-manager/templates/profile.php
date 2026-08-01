@@ -1,4 +1,5 @@
 <?php
+namespace OpenEvents;
 /**
  * Vista "Modifica Profilo". Incluso da Widget_Events_Manager::render() con
  * `include` (non `include_once`): condivide lo scope locale del metodo

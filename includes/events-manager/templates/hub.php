@@ -1,4 +1,5 @@
 <?php
+namespace OpenEvents;
 /**
  * Vista "Dashboard" (hub home). Incluso da Widget_Events_Manager::render()
  * con `include`: condivide lo scope locale del metodo chiamante ($this,

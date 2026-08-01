@@ -1,4 +1,5 @@
 <?php
+namespace OpenEvents;
 /**
  * Vista "Statistiche" (solo amministratori). Incluso da
  * Widget_Events_Manager::render() con `include`: condivide lo scope locale
