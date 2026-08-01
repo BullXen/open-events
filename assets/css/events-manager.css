@@ -993,6 +993,11 @@ p.em-section-subtitle {
 @media screen and (max-width: 900px) {
     .em-portal-layout {
         flex-direction: column;
+        /* Da riga a colonna: senza questo reset resta align-items:flex-start
+           (voluto in riga, per la sidebar sticky) e .em-portal-main si
+           restringe al contenuto più largo (es. titolo evento lungo) invece
+           di occupare tutta la larghezza, causando scroll orizzontale. */
+        align-items: stretch;
     }
     .em-portal-sidebar {
         flex: 1 1 auto;
