@@ -21,6 +21,18 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 
 == Changelog ==
 
+= 1.2.15 =
+* Nuovo: pulsante "+ Nuovo Evento" anche nella Dashboard (non solo nella sezione "I Miei Eventi"), in alto a destra sopra le card.
+* Fix: nell'admin gli organizzatori mostravano solo quelli dell'utente corrente invece di tutti; ora, come per i luoghi, l'admin vede sempre tutti gli organizzatori (raggruppati "I tuoi organizzatori" / "Altri organizzatori"), l'utente normale solo i propri.
+* Nuovo: opzioni "Funzioni form Inserisci Evento" in Impostazioni — attiva/disattiva indipendentemente i campi "Evento Giornaliero" ed "Evento Ricorrente" nel form front-end (entrambi attivi di default).
+* Nuovo: opzione "Date antecedenti" in Impostazioni (disattiva di default) — se disattivata, nei calendari del form Inserisci Evento non è possibile selezionare o navigare a giorni/mesi/anni precedenti a oggi.
+* Nuovo: nel form evento, la Data Fine si pre-seleziona sulla Data Inizio scelta e non permette date antecedenti ad essa; si riallinea automaticamente se la Data Inizio viene spostata più avanti.
+* Nuovo: il calendario dei campi data ha ora select dirette per mese e anno (oltre alle frecce avanti/indietro), per saltare rapidamente a un mese/anno lontano invece di scorrere un mese alla volta; la select anno mostra i prossimi 5 anni.
+* Fix: pulsante "Annulla" in fondo al form, su mobile, sostituito da un'icona X compatta (box rosso) per non tagliare il testo del pulsante di invio sulla stessa riga; resta invariato su desktop.
+* Fix: spaziatura eccessiva su mobile tra data/ora inizio, data/ora fine e gli switch "Evento Giornaliero"/"Evento Ricorrente" (il gap della grid si sommava al margine dei singoli campi).
+* Fix: spazio vuoto in eccesso in fondo alle sezioni "2. Date e Orari" e "4. Costo e Collegamenti" del form evento.
+* Fix: il popup del calendario poteva andare in overflow orizzontale su schermi stretti, spingendo/allargando l'intera pagina.
+
 = 1.2.0 =
 * Nuovo: vista Lista nel widget Ricerca Eventi (in alternativa alla griglia a card), con toggle persistente in localStorage; ogni riga mostra immagine, categoria, data/ora, titolo e comune in formato compatto.
 * Nuovo: nella vista Lista, cliccando sul comune di un evento si applica automaticamente il filtro "Comune" (se attivo nel widget), senza dover aprire il menu a tendina.
