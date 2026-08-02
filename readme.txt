@@ -4,7 +4,7 @@ Tags: events, elementor, the-events-calendar, front-end submission
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.4.5
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,10 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * I nuovi eventi vengono salvati come "in attesa di revisione" (pending) cosi' un amministratore puo' approvarli prima della pubblicazione; luoghi e organizzatori restano in bozza.
 
 == Changelog ==
+
+= 1.5.0 =
+* Nuovo: un evento singolo (non ricorrente) può ora essere convertito in "Evento ricorrente" anche in modifica, aggiungendo le date mancanti — prima il checkbox era disattivato per qualunque evento in modifica. Un evento già parte di una serie resta invece bloccato (si rischierebbe di rigenerare le date della serie ad ogni salvataggio).
+* Fix: quando un evento singolo con un'immagine di copertina viene convertito in ricorrente, le nuove date clonate ora ereditano la stessa immagine invece di restare senza copertina.
 
 = 1.4.5 =
 * Fix: pubblicando un evento di una serie ricorrente (più date), gli altri eventi della stessa serie non venivano più pubblicati insieme come previsto. Causa: la ricerca dei "fratelli" della serie usava get_posts(), la cui query viene silenziosamente filtrata da The Events Calendar (forza post_status a "publish" a livello SQL su ogni query tribe_events); ora usa una query diretta al database, come già fatto altrove nel plugin per lo stesso problema.

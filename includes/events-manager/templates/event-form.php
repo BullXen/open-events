@@ -170,14 +170,21 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                             </div>
                             <?php endif; ?>
 
-                            <?php if ( $show_recurring_field ) : ?>
+                            <?php if ( $show_recurring_field ) :
+                                // Un evento già parte di una serie non è modificabile qui (si
+                                // rischierebbe di rigenerare le date); un evento singolo può
+                                // invece essere convertito in ricorrente anche in modifica,
+                                // aggiungendo le date mancanti.
+                                $already_in_series = $edit_post && get_post_meta( $edit_post->ID, '_oe_series_id', true );
+                                $recurring_locked = 'edit' === $current_action && $already_in_series;
+                                ?>
                             <div class="em-form-group em-recurring-checkbox-group">
                                 <label class="em-checkbox-label">
-                                    <input type="checkbox" name="recurring_event" class="em-recurring-switch" value="yes" <?php checked( $is_recurring_val, 'yes' ); ?> <?php disabled( 'edit' === $current_action ); ?>>
+                                    <input type="checkbox" name="recurring_event" class="em-recurring-switch" value="yes" <?php checked( $is_recurring_val, 'yes' ); ?> <?php disabled( $recurring_locked ); ?>>
                                     <span><?php esc_html_e( 'Evento ricorrente (con più date)', 'open-events' ); ?></span>
                                 </label>
-                                <?php if ( 'edit' === $current_action ) : ?>
-                                    <small class="em-field-help"><?php esc_html_e( 'Non modificabile in modifica: questa data fa parte di una serie, modifichi solo questa occorrenza.', 'open-events' ); ?></small>
+                                <?php if ( $recurring_locked ) : ?>
+                                    <small class="em-field-help"><?php esc_html_e( 'Non modificabile: questa data fa parte già di una serie, modifichi solo questa occorrenza.', 'open-events' ); ?></small>
                                 <?php endif; ?>
                             </div>
                             <?php endif; ?>

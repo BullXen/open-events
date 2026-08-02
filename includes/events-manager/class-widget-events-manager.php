@@ -1033,12 +1033,16 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                             }
                         }
 
-                        // Evento con più date: alla creazione (mai in modifica, per non
-                        // rigenerare la serie ad ogni salvataggio) $post_id copre già la
-                        // prima data; per le altre cloniamo titolo/descrizione/luogo/
-                        // organizzatore/categoria/immagine come nuovi eventi indipendenti,
-                        // stessi orari, data diversa — collegati da _oe_series_id.
-                        if ( 'edit' !== $current_action && ! empty( $_POST['em_series_dates'] ) ) {
+                        // Evento con più date: $post_id copre già la prima data; per le
+                        // altre cloniamo titolo/descrizione/luogo/organizzatore/categoria/
+                        // immagine come nuovi eventi indipendenti, stessi orari, data
+                        // diversa — collegati da _oe_series_id. Alla creazione parte
+                        // sempre da zero; in modifica si può ancora convertire un evento
+                        // singolo in ricorrente (aggiungendo le date mancanti), ma MAI
+                        // rigenerare una serie che esiste già, altrimenti ogni salvataggio
+                        // clonerebbe di nuovo tutte le date.
+                        $editing_existing_series = 'edit' === $current_action && $edit_post && get_post_meta( $edit_post->ID, '_oe_series_id', true );
+                        if ( ! $editing_existing_series && ! empty( $_POST['em_series_dates'] ) ) {
                             $series_dates = json_decode( stripslashes( $_POST['em_series_dates'] ), true );
                             if ( is_array( $series_dates ) ) {
                                 $active_dates = array_values( array_filter( $series_dates, function( $d ) {
@@ -1112,6 +1116,12 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                                         }
                                         if ( isset( $attachment_id ) && ! is_wp_error( $attachment_id ) ) {
                                             set_post_thumbnail( $clone_id, $attachment_id );
+                                        } elseif ( has_post_thumbnail( $post_id ) ) {
+                                            // Conversione in ricorrente durante una modifica: se non è
+                                            // stata caricata una nuova immagine in questo salvataggio,
+                                            // le nuove date clonate ereditano quella già presente
+                                            // sull'evento originale invece di restare senza copertina.
+                                            set_post_thumbnail( $clone_id, get_post_thumbnail_id( $post_id ) );
                                         }
 
                                         do_action( 'save_post_tribe_events', $clone_id, get_post( $clone_id ), false );
