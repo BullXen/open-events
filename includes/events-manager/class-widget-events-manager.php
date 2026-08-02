@@ -480,19 +480,28 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     // altre della stessa serie, cosi' l'utente non deve ripetere
                     // l'azione manualmente per ognuna.
                     if ( 'tribe_events' === $target_post->post_type ) {
+                        // Notifica all'autore: template configurabile in
+                        // Open Events → Community (vedi community-emails.php).
+                        do_action( 'oe_community_event_published', $target_id, $target_post->post_title, $target_post->post_author );
+
                         $series_id = get_post_meta( $target_id, '_oe_series_id', true );
                         if ( $series_id ) {
-                            $sibling_ids = get_posts( [
-                                'post_type'      => 'tribe_events',
-                                'post_status'    => [ 'draft', 'pending', 'future' ],
-                                'posts_per_page' => -1,
-                                'fields'         => 'ids',
-                                'meta_key'       => '_oe_series_id',
-                                'meta_value'     => $series_id,
-                                'exclude'        => [ $target_id ],
-                            ] );
+                            // Bypassa get_posts()/WP_Query: come nella lista "I Miei
+                            // Eventi" più sopra, The Events Calendar forza post_status
+                            // a 'publish' a livello SQL su ogni query tribe_events,
+                            // quindi i "fratelli" ancora in attesa non verrebbero mai
+                            // trovati. Query diretta al DB, nessun filtro di terze
+                            // parti può interferire.
+                            global $wpdb;
+                            $sibling_ids = $wpdb->get_col( $wpdb->prepare(
+                                "SELECT p.ID FROM {$wpdb->posts} p
+                                INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID AND pm.meta_key = '_oe_series_id' AND pm.meta_value = %s
+                                WHERE p.post_type = 'tribe_events' AND p.post_status IN ( 'draft', 'pending', 'future' ) AND p.ID != %d",
+                                $series_id,
+                                $target_id
+                            ) );
                             foreach ( $sibling_ids as $sibling_id ) {
-                                $this->publish_post_now( $sibling_id );
+                                $this->publish_post_now( (int) $sibling_id );
                             }
                         }
                     }
@@ -1112,16 +1121,9 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                             }
                         }
 
-                        $admin_email = get_option( 'admin_email' );
-                        $subject = sprintf( esc_html__( 'Nuovo Evento Inserito: %s', 'open-events' ), $title );
-                        $body = sprintf( "Un nuovo evento è stato inserito sul portale ed è in attesa di revisione.\n\nTitolo: %s\nAutore: %s\nData Inizio: %s\nData Fine: %s\n\nPuoi revisionarlo qui: %s", 
-                            $title, 
-                            $current_user->display_name, 
-                            sanitize_text_field( $_POST['EventStartDate'] ), 
-                            sanitize_text_field( $_POST['EventEndDate'] ),
-                            admin_url( 'post.php?post=' . $post_id . '&action=edit' )
-                        );
-                        wp_mail( $admin_email, $subject, $body );
+                        // Notifica di revisione all'admin: template configurabile in
+                        // Open Events → Community (vedi community-emails.php).
+                        do_action( 'oe_community_event_submitted', $post_id, $title, $current_user->display_name );
 
                     } elseif ( 'tribe_organizer' === $post_type ) {
                         update_post_meta( $post_id, '_OrganizerPhone', sanitize_text_field( $_POST['_OrganizerPhone'] ?? '' ) );

@@ -3,7 +3,7 @@
 Plugin Name: Open Events
 Plugin URI: https://github.com/BullXen/open-events
 Description: Plugin per la gestione di eventi. Aggiunge a Elementor un widget che permette agli utenti loggati di gestire da front-end eventi, luoghi e organizzatori (The Events Calendar) come un portale.
-Version: 1.2.0
+Version: 1.4.0
 Author: BullXen
 GitHub Plugin URI: BullXen/open-events
 Primary Branch: main
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OPEN_EVENTS_VERSION', '1.2.16' );
+define( 'OPEN_EVENTS_VERSION', '1.4.5' );
 define( 'OPEN_EVENTS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OPEN_EVENTS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -25,6 +25,14 @@ require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/core/admin-settings.php';
 // Richiesto sempre: registra gli handler AJAX della Ricerca Eventi, che
 // vengono serviti da admin-ajax.php (dove il widget Elementor non è caricato).
 require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/events-search/events-search.php';
+
+// Richiesto sempre (non solo in admin): i filtri login_url/register_url/
+// login_redirect/authenticate e gli handler admin-post.php di Community
+// devono essere attivi su ogni pagina del sito, non solo dove c'è il widget.
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/community/community-settings.php';
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/community/community-auth.php';
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/community/community-oauth.php';
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/community/community-emails.php';
 
 /**
  * Porta in cima gli eventi "in primo piano" (_tribe_featured) anche nel
@@ -178,6 +186,9 @@ function open_events_register_widgets( $widgets_manager ) {
 
 	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/events-search/class-widget-events-search.php';
 	$widgets_manager->register( new \OpenEvents\Widget_Events_Search() );
+
+	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/community/class-widget-community-auth.php';
+	$widgets_manager->register( new \OpenEvents\Widget_Community_Auth() );
 }
 
 function open_events_register_assets() {
@@ -223,6 +234,21 @@ function open_events_register_assets() {
 			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 			'nonce'   => wp_create_nonce( 'open_events_search' ),
 		]
+	);
+
+	// Community Auth: stile + script del widget Accedi/Registrati.
+	wp_register_style(
+		'open-events-community-style',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/community/community.css',
+		[],
+		OPEN_EVENTS_VERSION
+	);
+	wp_register_script(
+		'open-events-community-script',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/community/community.js',
+		[],
+		OPEN_EVENTS_VERSION,
+		true
 	);
 }
 

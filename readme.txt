@@ -4,7 +4,7 @@ Tags: events, elementor, the-events-calendar, front-end submission
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.2.16
+Stable tag: 1.4.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,43 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * I nuovi eventi vengono salvati come "in attesa di revisione" (pending) cosi' un amministratore puo' approvarli prima della pubblicazione; luoghi e organizzatori restano in bozza.
 
 == Changelog ==
+
+= 1.4.5 =
+* Fix: pubblicando un evento di una serie ricorrente (più date), gli altri eventi della stessa serie non venivano più pubblicati insieme come previsto. Causa: la ricerca dei "fratelli" della serie usava get_posts(), la cui query viene silenziosamente filtrata da The Events Calendar (forza post_status a "publish" a livello SQL su ogni query tribe_events); ora usa una query diretta al database, come già fatto altrove nel plugin per lo stesso problema.
+
+= 1.4.4 =
+* Nuovo: nel pannello Stile del widget "Community Auth", controlli colore per il pulsante Accedi/Registrati (sfondo/testo normale e al passaggio del mouse) e per i tab in alto (sfondo/testo attivo e al passaggio del mouse).
+
+= 1.4.3 =
+* Nuovo: log diagnostico (error_log) quando un'email Community viene inviata o fallisce, per capire se il codice ha tentato l'invio quando poi non risulta ricevuta (utile soprattutto in locale, dove spesso manca un vero server SMTP).
+
+= 1.4.2 =
+* Fix: "Importa la foto profilo" poteva risultare disattivata senza che l'admin l'avesse mai deselezionata (il checkbox è stato aggiunto al form dopo che l'opzione era già salvabile, quindi un salvataggio precedente della pagina Community l'aveva silenziosamente spenta). Corretta una tantum al prossimo caricamento di wp-admin, senza toccare eventuali disattivazioni volute in seguito.
+
+= 1.4.1 =
+* Nuovo: icona del rispettivo provider (Google, Facebook) sui pulsanti "Accedi/Registrati con..." del widget Community Auth.
+
+= 1.4.0 =
+* Nuovo: modulo Community, Fase 2/3 — login/registrazione con Google e Facebook (OAuth "fatto in casa", nessuna dipendenza esterna), configurabili da Open Events → Community con le rispettive credenziali (Client ID/Secret, App ID/Secret) e l'indirizzo di redirect da incollare nella console Google/Meta.
+* Nuovo: se l'email del provider social corrisponde a un account già esistente, l'account social viene collegato a quello invece di crearne uno duplicato.
+* Nuovo: opzione per importare la foto profilo da Google/Facebook al primo accesso (mostrata al posto di Gravatar).
+* Nuovo: modulo Community, Fase 4 — editor delle email (mittente, email di benvenuto alla registrazione, notifica admin per nuovo evento in attesa di revisione, notifica all'autore quando il suo evento viene pubblicato) con segnaposto configurabili, tutto da Open Events → Community.
+
+= 1.3.3 =
+* Fix: nell'editor di Elementor (dove si è sempre loggati) il widget "Community Auth" mostrava solo il messaggio "hai già effettuato l'accesso", impedendo di vedere e stilizzare i form Accedi/Registrati. Ora nell'editor/anteprima Elementor i form vengono comunque mostrati, con un avviso che lo segnala.
+
+= 1.3.2 =
+* Nuovo: nel widget "Community Auth", chi è già loggato e riapre la pagina di accesso ora vede un conto alla rovescia di 5 secondi e viene reindirizzato automaticamente alla dashboard (può comunque cliccare "Vai subito" o "Esci" prima).
+
+= 1.3.1 =
+* Nuovo: il widget "Community Auth" ha ora controlli propri in Elementor oltre alle Impostazioni globali — tab predefinito (Accedi/Registrati), mostra/nascondi il tab "Registrati" su questa istanza, e un'immagine laterale opzionale (sinistra o destra).
+* Nuovo: impostando un'immagine laterale, il widget diventa un box a tutta larghezza diviso in due colonne (form + immagine); senza immagine il form resta centrato come prima.
+
+= 1.3.0 =
+* Nuovo: modulo "Community" (Fase 1) — nuova voce di menu "Community" in Open Events, con pagina di impostazioni per attivare/disattivare la registrazione classica, scegliere quali campi mostrare (nome, cognome, comune) come obbligatori/opzionali/nascosti, il ruolo WordPress assegnato ai nuovi iscritti, e le pagine di login/registrazione, redirect e password dimenticata.
+* Nuovo: widget Elementor "Community Auth" — form unico Accedi/Registrati con toggle via JS (senza reload pagina), supporta il parametro `?tab=registrati` per aprire direttamente la scheda registrazione da un link esterno.
+* Nuovo: login/registrazione classici del sito ora passano dal plugin — `wp_login_url()`/`wp_registration_url()`/`wp_lostpassword_url()` puntano alla pagina Community configurata, il login accetta anche l'indirizzo email oltre allo username, e dopo l'accesso l'utente atterra sulla pagina configurata (di norma la dashboard) invece che su wp-admin.
+* Nota: login/registrazione con Google e Facebook, editor email e conferma email via link non sono ancora attivi — arriveranno in aggiornamenti successivi (i relativi campi sono già visibili ma disattivati nella pagina Community).
 
 = 1.2.16 =
 * Fix: nel form evento, i campi "Ripeti fino al" e "Inserisci data extra" (evento ricorrente) permettevano di scegliere una data antecedente alla Data Inizio; ora, come la Data Fine, non possono precedere la Data Inizio scelta.
