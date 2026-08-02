@@ -348,18 +348,24 @@ class EventsManagerHandler extends elementorModules.frontend.handlers.Base {
             }
         });
 
-        // Data Fine: non può precedere la Data Inizio, e riparte pre-selezionata
-        // su quest'ultima finché l'utente non sceglie una data successiva.
+        // Data Fine, "Ripeti fino al" e "Inserisci data extra" non possono
+        // precedere la Data Inizio: si riallineano su di essa finché l'utente
+        // non sceglie una data successiva.
         const startPicker = this.datePickers['em_event_start_date'];
-        const endPicker = this.datePickers['em_event_end_date'];
-        if (startPicker && endPicker) {
-            const syncEndMinDate = () => {
+        const dependentPickers = [
+            this.datePickers['em_event_end_date'],
+            this.datePickers['em_series_until'],
+            this.datePickers['em_add_custom_date']
+        ].filter(Boolean);
+        if (startPicker && dependentPickers.length) {
+            const syncMinDate = () => {
                 const startVal = this.elements.$startDate.val();
                 if (!startVal) return;
-                endPicker.setMinDate(new Date(startVal + 'T00:00:00'));
+                const minDate = new Date(startVal + 'T00:00:00');
+                dependentPickers.forEach((picker) => picker.setMinDate(minDate));
             };
-            this.elements.$startDate.on('change', syncEndMinDate);
-            syncEndMinDate();
+            this.elements.$startDate.on('change', syncMinDate);
+            syncMinDate();
         }
     }
 

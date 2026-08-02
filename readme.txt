@@ -4,7 +4,7 @@ Tags: events, elementor, the-events-calendar, front-end submission
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.2.15
+Stable tag: 1.2.16
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,9 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * I nuovi eventi vengono salvati come "in attesa di revisione" (pending) cosi' un amministratore puo' approvarli prima della pubblicazione; luoghi e organizzatori restano in bozza.
 
 == Changelog ==
+
+= 1.2.16 =
+* Fix: nel form evento, i campi "Ripeti fino al" e "Inserisci data extra" (evento ricorrente) permettevano di scegliere una data antecedente alla Data Inizio; ora, come la Data Fine, non possono precedere la Data Inizio scelta.
 
 = 1.2.15 =
 * Nuovo: pulsante "+ Nuovo Evento" anche nella Dashboard (non solo nella sezione "I Miei Eventi"), in alto a destra sopra le card.
