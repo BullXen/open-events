@@ -1,0 +1,827 @@
+/* Ricerca Eventi — barra di ricerca + griglia risultati (namespace .oes-*). */
+
+.oes-search {
+    --oes-accent: #4f46e5;
+    --oes-bg: #ffffff;
+    --oes-border: #e5e7eb;
+    --oes-text: #111827;
+    --oes-muted: #6b7280;
+    --oes-radius: 14px;
+    --oes-shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 4px 16px rgba(16, 24, 40, .06);
+    color: var(--oes-text);
+    font-family: inherit;
+}
+
+/* --- Barra --- */
+.oes-search-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px;
+    background: var(--oes-bg);
+    border: 1px solid var(--oes-border);
+    border-radius: var(--oes-radius);
+    box-shadow: var(--oes-shadow);
+}
+
+.oes-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1 1 180px;
+    min-width: 150px;
+}
+
+.oes-field-text {
+    flex: 2 1 240px;
+}
+
+.oes-field-icon {
+    position: absolute;
+    left: 14px;
+    width: 18px;
+    height: 18px;
+    color: var(--oes-muted);
+    pointer-events: none;
+}
+
+.oes-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 14px 0 42px;
+    font-size: 15px;
+    color: var(--oes-text);
+    background: #f9fafb;
+    border: 1px solid var(--oes-border);
+    border-radius: 10px;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.oes-input::placeholder {
+    color: var(--oes-muted);
+}
+
+.oes-input:focus {
+    outline: none;
+    background: #fff;
+    border-color: var(--oes-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--oes-accent) 18%, transparent);
+}
+
+/* Freccia custom per i menu a tendina. */
+select.oes-input {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 38px;
+}
+
+/* Trigger custom (sostituisce il native <input type="date">) */
+.oes-date-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    cursor: pointer;
+}
+
+/* Neutralizza hover/focus rosso bordeaux/rosa dei bottoni del tema: qui è un
+   campo, non un CTA. !important: il tema ha [type="button"]:hover/:focus a
+   specificità identica alla nostra — senza, vince a seconda dell'ordine di
+   caricamento dei fogli di stile. */
+.oes-date-trigger:hover,
+.oes-date-trigger:focus {
+    background: #f9fafb !important;
+    color: inherit;
+    border-color: var(--oes-border);
+    outline: none;
+}
+
+.oes-date-label {
+    flex: 1;
+    font-size: 15px;
+    color: var(--oes-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+.oes-date-trigger.has-value .oes-date-label {
+    color: var(--oes-text);
+}
+
+.oes-date-chevron {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--oes-muted);
+    pointer-events: none;
+    transition: transform .2s ease;
+}
+
+.oes-date-trigger.is-open .oes-date-chevron {
+    transform: rotate(180deg);
+}
+
+/* --- Dropdown calendario --- */
+.oes-dp {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 9999;
+    width: 300px;
+    background: #fff;
+    border: 1px solid var(--oes-border);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(16,24,40,.14), 0 2px 8px rgba(16,24,40,.06);
+    overflow: hidden;
+    animation: oes-dp-in .15s ease;
+}
+
+@keyframes oes-dp-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.oes-dp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 10px;
+}
+
+.oes-dp-month-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--oes-text);
+    text-transform: capitalize;
+}
+
+.oes-dp-nav {
+    display: flex;
+    gap: 4px;
+}
+
+.oes-dp-nav button {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--oes-text);
+    transition: background .15s;
+    padding: 0;
+}
+
+.oes-dp-nav button:hover { background: #e5e7eb !important; }
+
+.oes-dp-nav svg {
+    width: 16px;
+    height: 16px;
+}
+
+.oes-dp-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 0 8px;
+    margin-bottom: 2px;
+}
+
+.oes-dp-weekday {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--oes-muted);
+    padding: 4px 0;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.oes-dp-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 0 8px 8px;
+    gap: 2px;
+}
+
+.oes-dp-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--oes-text);
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    transition: background .1s, color .1s;
+    padding: 0;
+    line-height: 1;
+}
+
+.oes-dp-day.is-empty { pointer-events: none; }
+
+/* Hover: solo testo accent, nessuno sfondo; start/end/single restano invariati */
+.oes-dp-day:not(.is-empty):not(.is-start):not(.is-end):not(.is-single):hover {
+    color: var(--oes-accent);
+}
+
+.oes-dp-day.is-today {
+    font-weight: 700;
+    color: var(--oes-accent);
+}
+
+.oes-dp-day.is-single,
+.oes-dp-day.is-start,
+.oes-dp-day.is-end {
+    background: var(--oes-accent);
+    color: #fff;
+    font-weight: 700;
+}
+
+/* Solo celle intermedie del range (non start/end che hanno sfondo pieno) */
+.oes-dp-day.is-in-range:not(.is-start):not(.is-end) {
+    background: color-mix(in srgb, var(--oes-accent) 12%, transparent);
+    color: var(--oes-accent);
+    border-radius: 0;
+}
+
+.oes-dp-day.is-start.is-in-range { border-radius: 8px 0 0 8px; }
+.oes-dp-day.is-end.is-in-range   { border-radius: 0 8px 8px 0; }
+
+.oes-dp-day.is-preview {
+    background: color-mix(in srgb, var(--oes-accent) 8%, transparent);
+    color: var(--oes-accent);
+}
+
+
+/* --- Chip rapidi + reset --- */
+.oes-quick {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 14px 0 18px;
+}
+
+.oes-chip {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--oes-muted);
+    background: #f3f4f6;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all .15s ease;
+}
+
+.oes-chip:hover {
+    color: var(--oes-text);
+    background: #e9ebef !important;
+}
+
+.oes-chip.is-active {
+    color: #fff;
+    background: var(--oes-accent);
+    border-color: var(--oes-accent);
+}
+.oes-chip.is-active:hover {
+    background: var(--oes-accent) !important;
+}
+
+.oes-reset {
+    margin-left: auto;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--oes-muted);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.oes-reset:hover {
+    color: var(--oes-text);
+    background: transparent !important;
+}
+
+.oes-view-toggle {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    background: #f3f4f6;
+    border-radius: 10px;
+}
+
+.oes-view-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    color: var(--oes-muted);
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all .15s ease;
+}
+
+.oes-view-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.oes-view-btn:hover {
+    color: var(--oes-text);
+    background: transparent !important;
+}
+
+.oes-view-btn.is-active {
+    color: var(--oes-text);
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, .08);
+}
+.oes-view-btn.is-active:hover {
+    background: #fff !important;
+}
+
+.oes-view-btn:focus-visible {
+    outline: 2px solid var(--oes-accent);
+    outline-offset: 2px;
+}
+
+/* --- Griglia risultati --- */
+.oes-results {
+    position: relative;
+    z-index: 1;
+    min-height: 80px;
+    transition: opacity .15s ease;
+}
+
+.oes-results.is-loading {
+    opacity: .5;
+    pointer-events: none;
+}
+
+.oes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+}
+
+/* --- Card (immagine full-cover + overlay gradient) --- */
+.oes-card {
+    position: relative;
+    z-index: 1;
+    display: block;
+    aspect-ratio: 3 / 4;
+    border-radius: var(--oes-radius);
+    overflow: hidden;
+    text-decoration: none;
+    color: #fff;
+    background: #1a1d23;
+    box-shadow: var(--oes-shadow);
+    cursor: pointer;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.oes-card:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 16px 40px rgba(16, 24, 40, .22);
+}
+
+.oes-card:focus-visible {
+    outline: 2px solid var(--oes-accent);
+    outline-offset: 2px;
+}
+
+.oes-card-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.oes-card-title a:focus-visible {
+    outline: 2px solid var(--oes-accent);
+    outline-offset: 2px;
+}
+
+.oes-card.is-featured {
+    box-shadow: 0 0 0 2px #fcd34d, 0 8px 28px rgba(16, 24, 40, .18);
+}
+
+/* Immagine: copre tutto il box */
+.oes-card-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform .35s ease;
+}
+
+.oes-card:hover .oes-card-bg {
+    transform: scale(1.04);
+}
+
+/* Placeholder senza immagine */
+.oes-card-bg-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+    color: rgba(255,255,255,.18);
+}
+
+.oes-card-bg-empty svg {
+    width: 52px;
+    height: 52px;
+}
+
+/* Gradient scuro solo nella fascia bassa (comune + titolo), trasparente sopra.
+   Colore, trasparenza e altezza sono personalizzabili dalle opzioni Elementor. */
+.oes-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to top,
+        var(--oes-grad-color, rgba(10, 12, 18, .96)) 0%,
+        transparent var(--oes-grad-height, 40%)
+    );
+    pointer-events: none;
+}
+
+/* Badge in cima (categoria + featured) */
+.oes-card-badges {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    z-index: 2;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.oes-card-cat {
+    padding: 4px 11px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #fff;
+    background: color-mix(in srgb, var(--oes-accent) 85%, transparent);
+    backdrop-filter: blur(6px);
+    border-radius: 999px;
+}
+
+.oes-card-featured {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #92400e;
+    background: #fef3c7;
+    border-radius: 999px;
+}
+
+.oes-card-featured svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* Corpo testo in basso, sopra il gradient */
+.oes-card-body {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    padding: 20px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* --- Badge data: tessera mese / numero / giorno settimana --- */
+.oes-card-date-badge {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    align-self: flex-start;
+    background: rgba(255, 255, 255, .13);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px;
+    padding: 7px 13px 8px;
+    min-width: 56px;
+    gap: 1px;
+}
+
+.oes-card-date-month {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    color: rgba(255, 255, 255, .65);
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.oes-card-date-day {
+    font-size: 34px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    margin: 3px 0 4px;
+}
+
+.oes-card-date-dow {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: #fff;
+    background: var(--oes-accent);
+    padding: 3px 10px;
+    border-radius: 999px;
+    line-height: 1.4;
+    text-transform: uppercase;
+}
+
+.oes-card-date-time {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, .60);
+    margin-top: 5px;
+    line-height: 1;
+}
+
+.oes-card-title {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.3;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+
+.oes-card-place {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, .95);
+    margin-top: 3px;
+}
+
+.oes-card-place svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    stroke-width: 2.5;
+}
+
+/* --- Vista lista: riusa il markup della card, cambia solo il layout --- */
+.oes-results.is-list .oes-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.oes-results.is-list .oes-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    /* !important: l'opzione "Proporzioni scheda" di Elementor inietta
+       {{WRAPPER}} .oes-card { aspect-ratio: ... } con specificità/ordine
+       più alta e vincerebbe altrimenti, rendendo le righe altissime. */
+    aspect-ratio: auto !important;
+    padding: 10px 44px 10px 96px;
+    color: var(--oes-text);
+    background: var(--oes-bg);
+    border: 1px solid var(--oes-border);
+    box-shadow: none;
+}
+
+.oes-results.is-list .oes-card:hover,
+.oes-results.is-list .oes-card:focus-visible {
+    transform: none;
+    background: #f9fafb;
+    box-shadow: var(--oes-shadow);
+}
+
+.oes-results.is-list .oes-card:focus-visible {
+    outline: 2px solid var(--oes-accent);
+    outline-offset: -2px;
+}
+
+.oes-results.is-list .oes-card::after {
+    display: none;
+}
+
+.oes-results.is-list .oes-card-bg {
+    top: 10px;
+    left: 10px;
+    right: auto;
+    bottom: auto;
+    width: 72px;
+    height: 72px;
+    border-radius: 8px;
+}
+
+/* Su sfondo bianco il chip semi-trasparente pensato per l'overlay sull'immagine
+   non garantisce 4.5:1 (WCAG AA): qui diventa pieno, niente blur da fare. */
+.oes-results.is-list .oes-card-cat {
+    background: var(--oes-accent);
+    backdrop-filter: none;
+}
+
+.oes-results.is-list .oes-card-badges,
+.oes-results.is-list .oes-card-body {
+    position: static;
+    padding: 0;
+}
+
+.oes-results.is-list .oes-card-date-badge {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 5px;
+    padding: 0;
+    min-width: 0;
+    background: none;
+    border: none;
+    backdrop-filter: none;
+}
+
+.oes-results.is-list .oes-card-date-month,
+.oes-results.is-list .oes-card-date-dow,
+.oes-results.is-list .oes-card-date-time {
+    color: var(--oes-muted);
+    background: none;
+    padding: 0;
+}
+
+.oes-results.is-list .oes-card-date-day {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--oes-text);
+    margin: 0;
+}
+
+.oes-results.is-list .oes-card-title {
+    color: var(--oes-text);
+    text-shadow: none;
+    font-size: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.oes-results.is-list .oes-card-place {
+    color: var(--oes-muted);
+}
+
+.oes-results.is-comune-clickable.is-list .oes-card-place:hover {
+    color: var(--oes-accent);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* --- Quick action "Condividi": solo in lista, hover su desktop, sempre visibile su mobile --- */
+.oes-card-share {
+    display: none;
+}
+
+.oes-results.is-list .oes-card-share {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    color: var(--oes-muted);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity .15s ease, background .15s ease, color .15s ease;
+}
+
+.oes-results.is-list .oes-card-share svg {
+    width: 17px;
+    height: 17px;
+}
+
+.oes-results.is-list .oes-card:hover .oes-card-share,
+.oes-results.is-list .oes-card-share:focus-visible {
+    opacity: 1;
+}
+
+.oes-results.is-list .oes-card-share:hover {
+    background: #eef2ff !important;
+    color: var(--oes-accent);
+}
+
+.oes-results.is-list .oes-card-share:focus-visible {
+    outline: 2px solid var(--oes-accent);
+    outline-offset: 1px;
+}
+
+.oes-results.is-list .oes-card-share.is-copied {
+    color: #16a34a;
+    opacity: 1;
+}
+
+@media (max-width: 600px) {
+    .oes-results.is-list .oes-card-share {
+        opacity: 1;
+        right: 6px;
+    }
+}
+
+@media (max-width: 600px) {
+    .oes-results.is-list .oes-card {
+        padding-left: 80px;
+    }
+
+    .oes-results.is-list .oes-card-bg {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+/* --- Stato vuoto --- */
+.oes-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 48px 20px;
+    color: var(--oes-muted);
+    text-align: center;
+}
+
+.oes-empty svg {
+    width: 40px;
+    height: 40px;
+    opacity: .6;
+}
+
+.oes-empty p {
+    margin: 0;
+    font-size: 15px;
+}
+
+/* --- Responsive ---
+   !important necessario perché Elementor genera CSS con specificità più alta
+   ({{WRAPPER}} .oes-grid) che altrimenti vince sulle media query. */
+@media (max-width: 900px) {
+    .oes-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .oes-field,
+    .oes-field-text {
+        flex: 1 1 100%;
+    }
+
+    .oes-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .oes-reset {
+        margin-left: 0;
+    }
+}
