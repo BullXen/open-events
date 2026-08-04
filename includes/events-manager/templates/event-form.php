@@ -85,6 +85,53 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                         </div>
                     <?php endif; ?>
 
+                    <?php if ( 'tribe_events' === $post_type ):
+                        $recommended_settings = open_events_get_featured_events_settings();
+                        $recommended_status_val = $edit_post ? get_post_meta( $edit_post->ID, '_illi_featured_status', true ) : '';
+                        $recommended_locked = in_array( $recommended_status_val, [ 'paid', 'pending_payment' ], true );
+
+                        $recommended_slot_available = true;
+                        if ( $edit_post ) {
+                            $recommended_existing_date = get_post_meta( $edit_post->ID, '_EventStartDate', true );
+                            if ( $recommended_existing_date ) {
+                                $recommended_slot_available = open_events_featured_slot_available_for_date( $recommended_existing_date, $edit_post->ID );
+                            }
+                        }
+                        ?>
+                        <div class="em-form-group em-recommended-checkbox-group">
+                            <label class="em-checkbox-label">
+                                <input type="checkbox" name="want_featured" value="yes" class="em-recommended-switch" <?php checked( $recommended_locked ); ?> <?php disabled( $recommended_locked || ! $recommended_slot_available ); ?>>
+                                <span><?php esc_html_e( 'Rendi il mio evento Consigliato', 'open-events' ); ?></span>
+                            </label>
+                            <?php if ( $recommended_locked ) : ?>
+                                <small class="em-field-help"><?php esc_html_e( 'Già attivo per questo evento.', 'open-events' ); ?></small>
+                            <?php elseif ( ! $recommended_slot_available ) : ?>
+                                <small class="em-field-help"><?php esc_html_e( 'Non ci sono più disponibilità per pubblicizzare eventi in queste date.', 'open-events' ); ?></small>
+                            <?php else :
+                                $recommended_price = number_format_i18n( $recommended_settings['stripe_price_amount'] / 100, 2 ) . ' ' . $recommended_settings['stripe_price_currency'];
+                                ?>
+                                <small class="em-field-help">
+                                    <?php printf( esc_html__( 'Prezzo: %s.', 'open-events' ), esc_html( $recommended_price ) ); ?>
+                                    <?php if ( $recommended_settings['info_page_id'] ) : ?>
+                                        <a href="<?php echo esc_url( get_permalink( $recommended_settings['info_page_id'] ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Scopri di più', 'open-events' ); ?></a>
+                                    <?php endif; ?>
+                                </small>
+                            <?php endif;
+                            $recommended_benefits = ! empty( $recommended_settings['benefits_enabled'] )
+                                ? array_filter( array_map( 'trim', explode( "\n", $recommended_settings['benefits_list'] ) ) )
+                                : [];
+                            if ( ! empty( $recommended_benefits ) ) : ?>
+                                <div id="em-recommended-benefits" class="em-recommended-benefits em-hidden">
+                                    <ul class="em-recommended-benefits-list">
+                                        <?php foreach ( $recommended_benefits as $recommended_benefit ) : ?>
+                                            <li><?php echo esc_html( $recommended_benefit ); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+
                     <?php if ( 'tribe_events' === $post_type && ! is_wp_error( $categories ) && ! empty( $categories ) ): ?>
                         <div class="em-form-group">
                             <label><?php esc_html_e( 'Categoria Evento *', 'open-events' ); ?></label>

@@ -246,7 +246,9 @@ class EventsManagerHandler extends elementorModules.frontend.handlers.Base {
                 previewList: '#em_preview_list',
                 seriesDatesInput: '#em_series_dates',
                 addCustomDate: '#em_add_custom_date',
-                addCustomDateBtn: '#em_add_custom_date_btn'
+                addCustomDateBtn: '#em_add_custom_date_btn',
+                recommendedSwitch: '.em-recommended-switch',
+                recommendedBenefits: '#em-recommended-benefits'
             }
         };
     }
@@ -274,7 +276,9 @@ class EventsManagerHandler extends elementorModules.frontend.handlers.Base {
             $previewList: this.$element.find(this.getSettings('selectors').previewList),
             $seriesDatesInput: this.$element.find(this.getSettings('selectors').seriesDatesInput),
             $addCustomDate: this.$element.find(this.getSettings('selectors').addCustomDate),
-            $addCustomDateBtn: this.$element.find(this.getSettings('selectors').addCustomDateBtn)
+            $addCustomDateBtn: this.$element.find(this.getSettings('selectors').addCustomDateBtn),
+            $recommendedSwitch: this.$element.find(this.getSettings('selectors').recommendedSwitch),
+            $recommendedBenefits: this.$element.find(this.getSettings('selectors').recommendedBenefits)
         };
     }
     bindEvents() {
@@ -319,11 +323,17 @@ class EventsManagerHandler extends elementorModules.frontend.handlers.Base {
             }
         };
 
+        const toggleRecommendedBenefits = () => {
+            this.elements.$recommendedBenefits.toggleClass('em-hidden', !this.elements.$recommendedSwitch.is(':checked'));
+        };
+
         this.elements.$allDaySwitch.on('change', toggleTimeFields);
         this.elements.$recurringSwitch.on('change', toggleRecurringFields);
+        this.elements.$recommendedSwitch.on('change', toggleRecommendedBenefits);
 
         toggleTimeFields(); // Run on load
         toggleRecurringFields(); // Run on load
+        toggleRecommendedBenefits(); // Run on load
 
         this.seriesDatesCache = [];
         this.initSeriesPreview();

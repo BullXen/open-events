@@ -420,7 +420,8 @@ select.oes-input {
     outline-offset: 2px;
 }
 
-.oes-card.is-featured {
+.oes-card.is-featured,
+.oes-card.is-recommended {
     box-shadow: 0 0 0 2px #fcd34d, 0 8px 28px rgba(16, 24, 40, .18);
 }
 
@@ -500,12 +501,32 @@ select.oes-input {
     padding: 4px 10px;
     font-size: 11px;
     font-weight: 700;
+    text-transform: uppercase;
     color: #92400e;
     background: #fef3c7;
     border-radius: 999px;
 }
 
 .oes-card-featured svg {
+    width: 12px;
+    height: 12px;
+}
+
+.oes-card-recommended {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #92400e;
+    background: #fef3c7;
+    border-radius: 999px;
+}
+
+.oes-card-recommended svg {
     width: 12px;
     height: 12px;
 }

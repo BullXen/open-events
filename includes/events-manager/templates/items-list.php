@@ -4,7 +4,12 @@ namespace OpenEvents;
  * Vista elenco (I Miei/Tutti gli Eventi|Luoghi|Organizzatori). Incluso da
  * Widget_Events_Manager::render() con `include`: condivide lo scope locale
  * del metodo chiamante ($this, $show_sidebar, $action_mode, $label_plural,
- * $label_singular, $label_icon, $post_type, $is_admin_view, $user_posts).
+ * $label_singular, $label_icon, $post_type, $is_admin_view, $user_posts,
+ * $current_user_id, $list_status, $total_pages, $current_page, $sort_by,
+ * $sort_dir — $list_status/$total_pages/$current_page validi solo per
+ * 'tribe_events' === $post_type && $is_admin_view ('' o 0 altrimenti);
+ * $sort_by/$sort_dir sempre validi per 'tribe_events' (default
+ * post_date/desc), ignorati per gli altri post type.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 ?>
@@ -30,6 +35,33 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
         </a>
     </div>
 
+    <?php if ( 'tribe_events' === $post_type ) : ?>
+        <div class="em-list-toolbar">
+            <div class="em-consigliati-filters">
+                <a href="<?php echo esc_url( remove_query_arg( [ 'list_status', 'epage' ] ) ); ?>" class="em-filter-pill<?php echo '' === $list_status ? ' active' : ''; ?>"><?php esc_html_e( 'Tutti', 'open-events' ); ?></a>
+                <a href="<?php echo esc_url( add_query_arg( 'list_status', 'publish', remove_query_arg( 'epage' ) ) ); ?>" class="em-filter-pill<?php echo 'publish' === $list_status ? ' active' : ''; ?>"><?php esc_html_e( 'Pubblicati', 'open-events' ); ?></a>
+                <a href="<?php echo esc_url( add_query_arg( 'list_status', 'expired', remove_query_arg( 'epage' ) ) ); ?>" class="em-filter-pill<?php echo 'expired' === $list_status ? ' active' : ''; ?>"><?php esc_html_e( 'Scaduti', 'open-events' ); ?></a>
+            </div>
+            <?php if ( $is_admin_view ) :
+                $pub_active     = ( 'post_date' === $sort_by );
+                $pub_next_dir   = $pub_active ? ( 'desc' === $sort_dir ? 'asc' : 'desc' ) : 'desc';
+                $event_active   = ( 'event_date' === $sort_by );
+                $event_next_dir = $event_active ? ( 'desc' === $sort_dir ? 'asc' : 'desc' ) : 'desc';
+                ?>
+                <div class="em-sort-controls">
+                    <a href="<?php echo esc_url( add_query_arg( [ 'sort_by' => 'post_date', 'sort_dir' => $pub_next_dir ], remove_query_arg( 'epage' ) ) ); ?>" class="em-sort-btn<?php echo $pub_active ? ' active' : ''; ?>" title="<?php esc_attr_e( 'Ordina per data di pubblicazione', 'open-events' ); ?>">
+                        <?php $this->render_icon( 'upload' ); ?> <?php esc_html_e( 'Pubblicazione', 'open-events' ); ?>
+                        <?php if ( $pub_active ) : ?><span class="em-sort-arrow"><?php echo 'asc' === $sort_dir ? '↑' : '↓'; ?></span><?php endif; ?>
+                    </a>
+                    <a href="<?php echo esc_url( add_query_arg( [ 'sort_by' => 'event_date', 'sort_dir' => $event_next_dir ], remove_query_arg( 'epage' ) ) ); ?>" class="em-sort-btn<?php echo $event_active ? ' active' : ''; ?>" title="<?php esc_attr_e( 'Ordina per data evento', 'open-events' ); ?>">
+                        <?php $this->render_icon( 'calendar' ); ?> <?php esc_html_e( 'Data evento', 'open-events' ); ?>
+                        <?php if ( $event_active ) : ?><span class="em-sort-arrow"><?php echo 'asc' === $sort_dir ? '↑' : '↓'; ?></span><?php endif; ?>
+                    </a>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
     <?php if ( empty( $user_posts ) ): ?>
         <div class="em-empty-state">
             <?php $this->render_icon( $label_icon ); ?>
@@ -54,20 +86,52 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                     $meta_line = get_post_meta( $p->ID, '_OrganizerEmail', true );
                 }
                 $item_edit_url = add_query_arg( 'edit_id', $p->ID );
+                // Un evento già pubblicato non è più modificabile dal proprietario
+                // (solo un admin può farlo) — vedi guardia lato server in render().
+                $can_edit_item = $is_admin_view || 'tribe_events' !== $post_type || 'publish' !== $p->post_status;
                 ?>
                 <div class="em-item-row">
-                    <a href="<?php echo esc_url( $item_edit_url ); ?>" class="em-item-thumb">
-                        <?php if ( $thumb_url ) : ?>
-                            <img src="<?php echo esc_url( $thumb_url ); ?>" alt="">
-                        <?php else : ?>
-                            <?php $this->render_icon( $label_icon ); ?>
-                        <?php endif; ?>
-                    </a>
+                    <?php if ( $can_edit_item ) : ?>
+                        <a href="<?php echo esc_url( $item_edit_url ); ?>" class="em-item-thumb">
+                            <?php if ( $thumb_url ) : ?>
+                                <img src="<?php echo esc_url( $thumb_url ); ?>" alt="">
+                            <?php else : ?>
+                                <?php $this->render_icon( $label_icon ); ?>
+                            <?php endif; ?>
+                        </a>
+                    <?php else : ?>
+                        <span class="em-item-thumb">
+                            <?php if ( $thumb_url ) : ?>
+                                <img src="<?php echo esc_url( $thumb_url ); ?>" alt="">
+                            <?php else : ?>
+                                <?php $this->render_icon( $label_icon ); ?>
+                            <?php endif; ?>
+                        </span>
+                    <?php endif; ?>
                     <div class="em-item-info">
                         <strong class="em-item-title">
-                            <a href="<?php echo esc_url( $item_edit_url ); ?>" class="em-item-title-link"><?php echo esc_html( $p->post_title ); ?></a>
+                            <?php if ( $can_edit_item ) : ?>
+                                <a href="<?php echo esc_url( $item_edit_url ); ?>" class="em-item-title-link"><?php echo esc_html( $p->post_title ); ?></a>
+                            <?php else : ?>
+                                <?php echo esc_html( $p->post_title ); ?>
+                            <?php endif; ?>
                             <?php if ( 'tribe_events' === $post_type && '1' === get_post_meta( $p->ID, '_tribe_featured', true ) ) : ?>
-                                <span class="em-featured-badge"><?php $this->render_icon( 'star' ); ?> <?php echo esc_html( open_events_get_featured_label() ); ?></span>
+                                <span class="em-featured-badge em-featured-badge-label"><?php $this->render_icon( 'star' ); ?> <?php echo esc_html( open_events_get_featured_label() ); ?></span>
+                            <?php endif; ?>
+                            <?php
+                            $consigliato_status = ( 'tribe_events' === $post_type ) ? get_post_meta( $p->ID, '_illi_featured_status', true ) : '';
+                            if ( 'tribe_events' === $post_type && open_events_featured_is_active( $p->ID ) ) :
+                                $consigliato_amount = get_post_meta( $p->ID, '_illi_featured_amount', true );
+                                ?>
+                                <span class="em-consigliato-badge" title="<?php echo $consigliato_amount ? esc_attr( sprintf( __( 'Pagato: %s', 'open-events' ), number_format_i18n( $consigliato_amount / 100, 2 ) ) ) : ''; ?>">
+                                    <?php $this->render_icon( 'star' ); ?> <?php esc_html_e( 'Consigliato', 'open-events' ); ?>
+                                </span>
+                            <?php endif;
+                            $consigliato_receipt_url = ( 'paid' === $consigliato_status ) ? open_events_featured_get_receipt_url( $p->ID ) : '';
+                            if ( $consigliato_receipt_url ) : ?>
+                                <a href="<?php echo esc_url( $consigliato_receipt_url ); ?>" class="em-receipt-link" target="_blank" rel="noopener noreferrer" title="<?php esc_attr_e( 'Ricevuta Stripe', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Ricevuta Stripe', 'open-events' ); ?>">
+                                    <?php $this->render_icon( 'link' ); ?> <?php esc_html_e( 'Ricevuta', 'open-events' ); ?>
+                                </a>
                             <?php endif; ?>
                         </strong>
                         <?php if ( $meta_line || $is_admin_view ) : ?>
@@ -100,6 +164,20 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                     <a href="<?php echo esc_url( 'publish' === $p->post_status ? get_permalink( $p->ID ) : get_preview_post_link( $p ) ); ?>" class="em-action-btn preview-btn" target="_blank" rel="noopener noreferrer" title="<?php esc_attr_e( 'Anteprima', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Anteprima', 'open-events' ); ?>">
                         <?php $this->render_icon( 'eye' ); ?>
                     </a>
+                    <?php if ( 'tribe_events' === $post_type && (int) $p->post_author === (int) $current_user_id && empty( $p->is_expired ) && in_array( $consigliato_status, [ '', 'none', 'pending_payment' ], true ) ) :
+                        $consigliato_action_url = wp_nonce_url(
+                            add_query_arg( [ 'oe_featured_checkout' => 'start', 'post_id' => $p->ID ] ),
+                            'oe_featured_start_' . $p->ID
+                        );
+                        $consigliato_action_label = 'pending_payment' === $consigliato_status
+                            ? esc_html__( 'Completa il pagamento', 'open-events' )
+                            : esc_html__( 'Rendi Consigliato', 'open-events' );
+                        ?>
+                        <a href="<?php echo esc_url( $consigliato_action_url ); ?>" class="em-action-btn em-consigliato-cta consigliato-btn" title="<?php echo esc_attr( $consigliato_action_label ); ?>" aria-label="<?php echo esc_attr( $consigliato_action_label ); ?>">
+                            <?php $this->render_icon( 'credit-card' ); ?>
+                            <span><?php echo esc_html( $consigliato_action_label ); ?></span>
+                        </a>
+                    <?php endif; ?>
                     <?php if ( $is_admin_view && 'publish' !== $p->post_status ) : ?>
                         <a href="<?php echo esc_url( wp_nonce_url( add_query_arg( [ 'em_action' => 'publish', 'post_id' => $p->ID ] ), 'em_publish_' . $p->ID ) ); ?>" class="em-action-btn publish-btn" onclick="return confirm('<?php echo esc_js( __( 'Pubblicare questo elemento online?', 'open-events' ) ); ?>');" title="<?php esc_attr_e( 'Pubblica', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Pubblica', 'open-events' ); ?>">
                             <?php $this->render_icon( 'check' ); ?>
@@ -111,11 +189,22 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                             <?php $this->render_icon( 'trash' ); ?>
                         </a>
                     <?php endif; ?>
-                    <a href="<?php echo esc_url( $item_edit_url ); ?>" class="em-action-btn edit-btn" title="<?php esc_attr_e( 'Modifica', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Modifica', 'open-events' ); ?>">
-                        <?php $this->render_icon( 'edit' ); ?>
-                    </a>
+                    <?php if ( $can_edit_item ) : ?>
+                        <a href="<?php echo esc_url( $item_edit_url ); ?>" class="em-action-btn edit-btn" title="<?php esc_attr_e( 'Modifica', 'open-events' ); ?>" aria-label="<?php esc_attr_e( 'Modifica', 'open-events' ); ?>">
+                            <?php $this->render_icon( 'edit' ); ?>
+                        </a>
+                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         </div>
+        <?php if ( 'tribe_events' === $post_type && $is_admin_view && $total_pages > 1 ) : ?>
+            <div class="em-pagination">
+                <a href="<?php echo esc_url( add_query_arg( 'epage', max( 1, $current_page - 1 ) ) ); ?>" class="em-page-link em-page-prev<?php echo 1 === $current_page ? ' is-disabled' : ''; ?>">&larr; <?php esc_html_e( 'Indietro', 'open-events' ); ?></a>
+                <?php for ( $page_num = 1; $page_num <= $total_pages; $page_num++ ) : ?>
+                    <a href="<?php echo esc_url( add_query_arg( 'epage', $page_num ) ); ?>" class="em-page-link<?php echo $page_num === $current_page ? ' active' : ''; ?>"><?php echo esc_html( $page_num ); ?></a>
+                <?php endfor; ?>
+                <a href="<?php echo esc_url( add_query_arg( 'epage', min( $total_pages, $current_page + 1 ) ) ); ?>" class="em-page-link em-page-next<?php echo $current_page === $total_pages ? ' is-disabled' : ''; ?>"><?php esc_html_e( 'Avanti', 'open-events' ); ?> &rarr;</a>
+            </div>
+        <?php endif; ?>
     <?php endif; ?>
 </div>

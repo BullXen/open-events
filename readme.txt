@@ -4,7 +4,7 @@ Tags: events, elementor, the-events-calendar, front-end submission
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.8.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,71 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * I nuovi eventi vengono salvati come "in attesa di revisione" (pending) cosi' un amministratore puo' approvarli prima della pubblicazione; luoghi e organizzatori restano in bozza.
 
 == Changelog ==
+
+= 1.8.5 =
+* Migliorato il badge "Consigliato": testo ora in maiuscolo ovunque compare (schede evento "Ricerca Eventi", dashboard, calendario pubblico), come già fatto per "in primo piano".
+
+= 1.8.4 =
+* Migliorata l'etichetta "in primo piano": testo ora in maiuscolo ovunque compare (dashboard, calendario pubblico, Ricerca Eventi).
+
+= 1.8.3 =
+* Nuovo: filtro Tutti/Pubblicati/Scaduti anche in "I Miei Eventi" (utente), non solo nella dashboard admin "Tutti gli Eventi". Ordinamento e paginazione restano solo lato admin.
+
+= 1.8.2 =
+* Nuovo: due pulsanti in alto a destra in "Tutti gli Eventi" per ordinare per data di pubblicazione o per data evento, crescente/decrescente (clic ripetuto sullo stesso pulsante inverte il verso).
+
+= 1.8.1 =
+* Fix: il pulsante "Rendi Consigliato"/"Completa il pagamento" in "I Miei Eventi" restava visibile anche su un evento con data ormai passata; ora non compare più per un evento scaduto.
+
+= 1.8.0 =
+* Fix: un evento Consigliato con data ormai passata restava "in primo piano" in cima alla dashboard admin "Tutti gli Eventi"; ora un evento scaduto torna in ordine normale.
+* Nuovo: filtro Tutti/Pubblicati/Scaduti e paginazione (30 per pagina, con numeri di pagina e Avanti/Indietro) nella dashboard admin "Tutti gli Eventi".
+
+= 1.7.9 =
+* Fix: il badge pubblico "Consigliato" (calendario TEC ed elenco "Ricerca Eventi") aspettava gli ultimi 7 giorni prima dell'evento come il boost in cima ai risultati; ora il badge è visibile da subito dopo il pagamento (fino a fine settimana promossa), mentre solo il boost in cima all'elenco resta negli ultimi 7 giorni.
+
+= 1.7.8 =
+* Fix: il badge/priorità "Consigliato" nel calendario pubblico di TEC non veniva applicato alla vista "Ricerca Eventi" (widget Elementor con query e card proprie, separate dalle Views v2 di TEC) — ora un evento Consigliato attivo (ultimi 7 giorni prima dell'inizio) mostra il badge e va in cima ai risultati anche lì.
+
+= 1.7.7 =
+* Nuovo: link "Ricevuta" (icona) sull'evento Consigliato pagato, visibile sia in "I Miei Eventi" (utente) sia nella sezione admin "Consigliati" — apre la ricevuta Stripe in una nuova scheda. Recuperata dal webhook al momento del pagamento; per i pagamenti già confermati prima di questa modifica viene recuperata al volo la prima volta e poi salvata.
+
+= 1.7.6 =
+* Nuovo: un evento "Consigliato" pagato va in primo piano nel calendario pubblico (badge + priorità di ordinamento, stesso meccanismo del flag "in primo piano" manuale) negli ultimi 7 giorni prima dell'inizio evento, non da subito dopo il pagamento.
+* Fix: un utente poteva ancora modificare un proprio evento dopo che veniva pubblicato da un admin; ora, una volta pubblicato, solo un amministratore può modificarlo (il link "Modifica" in "I Miei Eventi" viene nascosto per l'evento).
+
+= 1.7.5 =
+* Fix: il badge "Consigliato" in "I Miei Eventi" restava attivo per sempre dopo il pagamento; ora scompare automaticamente alla fine della settimana solare promossa (coerente con lo slot settimanale a pagamento).
+
+= 1.7.4 =
+* Nuovo: elenco vantaggi (opzionale, configurabile da Open Events → Eventi Consigliati) mostrato nel form evento quando l'utente seleziona "Rendi il mio evento Consigliato" — 2 colonne su mobile, 3 su desktop.
+
+= 1.7.3 =
+* Migliorata l'azione "Rendi Consigliato / Completa il pagamento" in "I Miei Eventi": ora è un pulsante con icona carta di credito ed etichetta testuale visibile, invece della sola stella con testo solo al passaggio del mouse.
+
+= 1.7.2 =
+* Fix: warning PHP "Undefined variable $show_sidebar" sull'azione rapida "Rendi Consigliato/Completa pagamento" nell'elenco eventi.
+* Fix: il campo "Segreto webhook Stripe" nelle impostazioni era di tipo password, con rischio di interferenza dell'autocompletamento del browser che impediva il salvataggio; ora è un campo di testo semplice.
+
+= 1.7.1 =
+* Fix: un evento eliminato (cestinato) da "I Miei Eventi" restava comunque visibile nella sezione admin "Consigliati" — la query non escludeva gli eventi nel cestino.
+
+= 1.7.0 =
+* Nuovo: modulo "Eventi Consigliati" (Fase 2) — nuova sezione admin "Consigliati" nella Dashboard (elenco eventi pagati/in attesa/scaduti con filtro per stato, badge "nuovi" come le altre sezioni, conferma/revoca manuale per pagamenti gestiti fuori piattaforma).
+* Nuovo: nell'elenco "I Miei/Tutti gli Eventi", badge "Consigliato" sugli eventi pagati e pulsante rapido per attivare o completare il pagamento su un proprio evento già pubblicato, senza dover riaprire il form.
+
+= 1.6.0 =
+* Nuovo: modulo "Eventi Consigliati" (Fase 1) — nuova voce di menu "Eventi Consigliati" in Open Events per configurare Stripe (chiavi, webhook, prezzo/valuta, pagina informativa, slot massimi per settimana, colore badge).
+* Nuovo: nel form Inserisci/Modifica Evento, checkbox "Rendi il mio evento Consigliato" (per tutti gli utenti) con prezzo e link alla pagina informativa; se lo slot settimanale è pieno risulta disattivata con messaggio.
+* Nuovo: alla conferma, se lo slot è disponibile, l'utente viene reindirizzato a una Stripe Checkout Session (implementazione diretta via REST API di Stripe, nessuna dipendenza esterna); un webhook dedicato (prima REST route del plugin) conferma il pagamento in modo affidabile indipendentemente dal redirect del browser.
+* Nuovo: massimo 3 eventi Consigliati per settimana solare (configurabile); per un evento ricorrente conta solo la prima data della serie.
+* Nota: sezione admin "Consigliati" per gestire/monitorare i pagamenti, badge nella dashboard utente e priorità nell'elenco pubblico arriveranno in aggiornamenti successivi (Fase 2/3).
+
+= 1.5.2 =
+* Fix: il badge "nuovi" nella Dashboard non compariva per "I Miei/Tutti gli Eventi" quando veniva inserito un nuovo evento (funzionava correttamente per Luoghi e Organizzatori). Stessa causa già risolta altrove nel plugin: la query di conteggio usava get_posts(), che The Events Calendar filtra forzando post_status a "publish" su ogni query tribe_events — un evento appena inserito, ancora "in attesa", non veniva mai contato. Ora usa una query diretta al database.
+
+= 1.5.1 =
+* Fix: dopo il login (classico o social) la sessione sembrava "non tenere" — ricaricando la pagina si tornava allo stato precedente. Causa reale: la cache "Elementi" di Elementor (attiva di default, fino a 24h) mette in cache l'HTML dell'intera pagina in modo identico per tutti i visitatori, senza distinguere utenti loggati/anonimi — chi visitava per primo una pagina col widget Community Auth o Front-end Events Manager ne "congelava" lo stato per chiunque altro. Ora la cache viene bypassata per i visitatori loggati (i visitatori anonimi continuano a beneficiarne normalmente).
 
 = 1.5.0 =
 * Nuovo: un evento singolo (non ricorrente) può ora essere convertito in "Evento ricorrente" anche in modifica, aggiungendo le date mancanti — prima il checkbox era disattivato per qualunque evento in modifica. Un evento già parte di una serie resta invece bloccato (si rischierebbe di rigenerare le date della serie ad ogni salvataggio).

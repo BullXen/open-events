@@ -219,6 +219,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             'trash'    => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
             'chart'    => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
             'close'    => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+            'credit-card' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>',
         ];
 
         return $icons[ $key ] ?? '';
@@ -237,10 +238,11 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             'tribe_organizer' => [ 'label' => esc_html__( 'I Miei Organizzatori', 'open-events' ), 'icon' => 'person' ],
         ];
 
-        // Gestione utenti e statistiche sono riservate agli amministratori.
+        // Gestione utenti, statistiche e Consigliati sono riservate agli amministratori.
         if ( current_user_can( 'manage_options' ) ) {
             $nav_items['users'] = [ 'label' => esc_html__( 'Utenti', 'open-events' ), 'icon' => 'users' ];
             $nav_items['stats'] = [ 'label' => esc_html__( 'Statistiche', 'open-events' ), 'icon' => 'chart' ];
+            $nav_items['consigliati'] = [ 'label' => esc_html__( 'Consigliati', 'open-events' ), 'icon' => 'star' ];
         }
 
         $nav_items['profile'] = [ 'label' => esc_html__( 'Profilo', 'open-events' ), 'icon' => 'person' ];
@@ -363,24 +365,24 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             return 0;
         }
 
-        $args = [
-            'post_type'      => $post_type,
-            'post_status'    => [ 'publish', 'pending', 'draft', 'future' ],
-            'posts_per_page' => -1,
-            'fields'         => 'ids',
-            'date_query'     => [
-                [
-                    'column'    => 'post_date_gmt',
-                    'after'     => gmdate( 'Y-m-d H:i:s', (int) $last_seen ),
-                    'inclusive' => false,
-                ],
-            ],
-        ];
+        // Bypassa get_posts()/WP_Query: come altrove in questo file, The Events
+        // Calendar forza post_status a 'publish' a livello SQL su ogni query
+        // tribe_events, quindi i nuovi eventi ancora in attesa di revisione non
+        // verrebbero mai contati nel badge. Query diretta al DB, nessun filtro
+        // di terze parti può interferire.
+        global $wpdb;
+        $statuses = [ 'publish', 'pending', 'draft', 'future' ];
+        $status_placeholders = implode( ', ', array_fill( 0, count( $statuses ), '%s' ) );
+
+        $sql = "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = %s AND post_status IN ($status_placeholders) AND post_date_gmt > %s";
+        $params = array_merge( [ $post_type ], $statuses, [ gmdate( 'Y-m-d H:i:s', (int) $last_seen ) ] );
+
         if ( ! $is_admin_view ) {
-            $args['author'] = $current_user_id;
+            $sql .= ' AND post_author = %d';
+            $params[] = $current_user_id;
         }
 
-        return count( get_posts( $args ) );
+        return (int) $wpdb->get_var( $wpdb->prepare( $sql, $params ) );
     }
 
     /** Segna $post_type come "visto adesso" per l'utente: azzera il badge. */
@@ -444,7 +446,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
         $post_type = '';
         if ( 'hub' === $action_mode ) {
             $post_type = isset( $_GET['view'] ) ? sanitize_text_field( $_GET['view'] ) : '';
-            if ( ! in_array( $post_type, [ 'tribe_events', 'tribe_organizer', 'tribe_venue', 'profile', 'users', 'stats' ] ) ) {
+            if ( ! in_array( $post_type, [ 'tribe_events', 'tribe_organizer', 'tribe_venue', 'profile', 'users', 'stats', 'consigliati' ] ) ) {
                 $post_type = '';
             }
             // L'utente sta aprendo la sezione: il badge "nuovi" si azzera.
@@ -507,6 +509,38 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     }
 
                     echo '<script type="text/javascript">window.location.href = "' . esc_url_raw( $redirect_back ) . '";</script>';
+                    return;
+                }
+            }
+        }
+
+        // Azione utente: attiva/riprendi il pagamento "Consigliato" su un
+        // proprio evento dall'elenco, senza dover riaprire il form. Non è
+        // gated da $is_admin_view (è un'azione sul proprio contenuto), ma un
+        // admin può farla per conto di chiunque (stesso spirito della sezione
+        // Consigliati che gestisce comunque anche le conferme manuali).
+        if ( 'tribe_events' === $post_type && isset( $_GET['oe_featured_checkout'], $_GET['post_id'] ) && 'start' === $_GET['oe_featured_checkout'] ) {
+            $target_id = intval( $_GET['post_id'] );
+            $target_post = get_post( $target_id );
+            $redirect_back = remove_query_arg( [ 'oe_featured_checkout', 'post_id', '_wpnonce' ] );
+
+            if ( ! $target_post || 'tribe_events' !== $target_post->post_type ) {
+                echo '<div class="em-alert error">' . esc_html__( 'Evento non trovato.', 'open-events' ) . '</div>';
+            } elseif ( ! wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'oe_featured_start_' . $target_id ) ) {
+                echo '<div class="em-alert error">' . esc_html__( 'Link scaduto o non valido. Torna alla lista e riprova.', 'open-events' ) . '</div>';
+            } elseif ( (int) $target_post->post_author !== (int) $current_user_id && ! $is_admin_view ) {
+                echo '<div class="em-alert error">' . esc_html__( 'Non hai i permessi per questa azione.', 'open-events' ) . '</div>';
+            } else {
+                $checkout_result = open_events_featured_start_checkout_flow( $target_id, $redirect_back );
+                if ( is_wp_error( $checkout_result ) ) {
+                    echo '<div class="em-alert error">' . esc_html( $checkout_result->get_error_message() ) . '</div>';
+                } else {
+                    // Nessun wrapper $show_sidebar da chiudere qui: a questo punto
+                    // del metodo non è ancora stato aperto (viene definito e aperto
+                    // più sotto), stesso motivo per cui il blocco pubblica/elimina
+                    // qui sopra non lo controlla.
+                    echo '<script type="text/javascript">window.location.href = "' . esc_url_raw( $checkout_result ) . '";</script>';
+                    echo '<div class="em-form-container em-form-view"><div class="em-alert success">' . esc_html__( 'Reindirizzamento al pagamento in corso...', 'open-events' ) . '</div></div>';
                     return;
                 }
             }
@@ -745,11 +779,83 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             return;
         }
 
+        // Handle Consigliati (eventi con promozione a pagamento — solo amministratori)
+        if ( 'consigliati' === $post_type ) {
+            if ( ! $is_admin_view ) {
+                echo '<div class="em-alert error">' . esc_html__( 'Non hai i permessi per vedere gli eventi Consigliati.', 'open-events' ) . '</div>';
+                if ( $show_sidebar ) {
+                    echo '</div></div>';
+                }
+                return;
+            }
+
+            open_events_featured_hub_mark_seen( $current_user_id );
+
+            $consigliati_notice = '';
+            $consigliati_error  = '';
+
+            // Azione: conferma/revoca manuale (GET con nonce) — per pagamenti
+            // gestiti fuori piattaforma, rimborsi, ecc.
+            if ( isset( $_GET['oe_featured_action'], $_GET['post_id'] ) && in_array( $_GET['oe_featured_action'], [ 'confirm', 'revoke' ], true ) ) {
+                $target_id  = intval( $_GET['post_id'] );
+                $action_key = sanitize_text_field( wp_unslash( $_GET['oe_featured_action'] ) );
+
+                if ( ! wp_verify_nonce( $_GET['_wpnonce'] ?? '', 'oe_featured_' . $action_key . '_' . $target_id ) ) {
+                    $consigliati_error = esc_html__( 'Link di azione scaduto o non valido. Riprova.', 'open-events' );
+                } elseif ( 'tribe_events' !== get_post_type( $target_id ) ) {
+                    $consigliati_error = esc_html__( 'Evento non trovato.', 'open-events' );
+                } elseif ( 'confirm' === $action_key ) {
+                    update_post_meta( $target_id, '_illi_featured_status', 'paid' );
+                    if ( ! get_post_meta( $target_id, '_illi_featured_paid_at', true ) ) {
+                        update_post_meta( $target_id, '_illi_featured_paid_at', current_time( 'mysql' ) );
+                    }
+                    $consigliati_notice = esc_html__( 'Evento confermato come Consigliato.', 'open-events' );
+                } else {
+                    update_post_meta( $target_id, '_illi_featured_status', 'none' );
+                    $consigliati_notice = esc_html__( 'Stato Consigliato revocato.', 'open-events' );
+                }
+            }
+
+            $consigliati_filter = isset( $_GET['status'] ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : '';
+            if ( ! in_array( $consigliati_filter, [ 'paid', 'pending_payment', 'expired' ], true ) ) {
+                $consigliati_filter = '';
+            }
+
+            // Query diretta $wpdb: MAI get_posts()/WP_Query su tribe_events per
+            // stati diversi da 'publish' — The Events Calendar li forza a
+            // livello SQL (stesso problema già risolto altrove nel plugin).
+            global $wpdb;
+            $status_values = $consigliati_filter ? [ $consigliati_filter ] : [ 'paid', 'pending_payment', 'expired' ];
+            $status_placeholders = implode( ', ', array_fill( 0, count( $status_values ), '%s' ) );
+
+            $consigliati_events = $wpdb->get_results( $wpdb->prepare(
+                "SELECT p.ID, p.post_title, p.post_author, p.post_status,
+                    status_meta.meta_value AS featured_status,
+                    amount_meta.meta_value AS featured_amount,
+                    date_meta.meta_value AS featured_date
+                 FROM {$wpdb->posts} p
+                 INNER JOIN {$wpdb->postmeta} status_meta ON status_meta.post_id = p.ID AND status_meta.meta_key = '_illi_featured_status'
+                 LEFT JOIN {$wpdb->postmeta} amount_meta ON amount_meta.post_id = p.ID AND amount_meta.meta_key = '_illi_featured_amount'
+                 LEFT JOIN {$wpdb->postmeta} date_meta ON date_meta.post_id = p.ID AND date_meta.meta_key = '_illi_featured_first_date'
+                 WHERE p.post_type = 'tribe_events' AND p.post_status != 'trash' AND status_meta.meta_value IN ($status_placeholders)
+                 ORDER BY p.ID DESC",
+                $status_values
+            ) );
+
+            include OPEN_EVENTS_PLUGIN_DIR . 'includes/events-manager/templates/consigliati.php';
+
+            if ( $show_sidebar ) {
+                echo '</div></div>';
+            }
+            return;
+        }
+
         // Handle Portal Hub Home
         if ( 'hub' === $action_mode && empty( $post_type ) ) {
             $hub_new_events     = $this->hub_new_count( 'tribe_events', $is_admin_view, $current_user_id );
             $hub_new_venues     = $this->hub_new_count( 'tribe_venue', $is_admin_view, $current_user_id );
             $hub_new_organizers = $this->hub_new_count( 'tribe_organizer', $is_admin_view, $current_user_id );
+            $hub_new_consigliati = $is_admin_view ? open_events_featured_hub_new_count( $current_user_id ) : 0;
 
             include OPEN_EVENTS_PLUGIN_DIR . 'includes/events-manager/templates/hub.php';
 
@@ -808,15 +914,86 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             }
             $user_posts = $wpdb->get_results( $sql );
 
+            $list_status  = '';
+            $total_pages  = 0;
+            $current_page = 1;
+
+            $sort_by  = 'post_date';
+            $sort_dir = 'desc';
+
             if ( 'tribe_events' === $post_type ) {
-                usort( $user_posts, function( $a, $b ) {
-                    $a_featured = '1' === get_post_meta( $a->ID, '_tribe_featured', true ) ? 1 : 0;
-                    $b_featured = '1' === get_post_meta( $b->ID, '_tribe_featured', true ) ? 1 : 0;
-                    if ( $a_featured !== $b_featured ) {
-                        return $b_featured - $a_featured;
+                // Un evento e' "scaduto" quando la sua fine (o l'inizio, se
+                // manca la fine) e' nel passato — usato sia per il filtro
+                // Tutti/Pubblicati/Scaduti sia per non tenere in cima alla
+                // lista un evento Consigliato ormai concluso.
+                $now = current_time( 'mysql' );
+                foreach ( $user_posts as $p ) {
+                    $p->event_start = get_post_meta( $p->ID, '_EventStartDate', true );
+                    $end = get_post_meta( $p->ID, '_EventEndDate', true ) ?: $p->event_start;
+                    $p->is_expired = $end && $end < $now;
+                }
+
+                // Ordinamento scelto dall'utente (icone in "Tutti gli Eventi"):
+                // per data di pubblicazione o per data evento, entrambe con
+                // verso configurabile. Resta comunque secondario al "pin" degli
+                // eventi in primo piano/Consigliati attivi, sopra.
+                $sort_by = isset( $_GET['sort_by'] ) ? sanitize_key( wp_unslash( $_GET['sort_by'] ) ) : 'post_date';
+                if ( ! in_array( $sort_by, [ 'post_date', 'event_date' ], true ) ) {
+                    $sort_by = 'post_date';
+                }
+                $sort_dir = isset( $_GET['sort_dir'] ) ? sanitize_key( wp_unslash( $_GET['sort_dir'] ) ) : 'desc';
+                if ( ! in_array( $sort_dir, [ 'asc', 'desc' ], true ) ) {
+                    $sort_dir = 'desc';
+                }
+                $sort_multiplier = 'asc' === $sort_dir ? 1 : -1;
+
+                usort( $user_posts, function( $a, $b ) use ( $sort_by, $sort_multiplier ) {
+                    $a_pinned = ! $a->is_expired && ( '1' === get_post_meta( $a->ID, '_tribe_featured', true ) || open_events_featured_is_active( $a->ID ) ) ? 1 : 0;
+                    $b_pinned = ! $b->is_expired && ( '1' === get_post_meta( $b->ID, '_tribe_featured', true ) || open_events_featured_is_active( $b->ID ) ) ? 1 : 0;
+                    if ( $a_pinned !== $b_pinned ) {
+                        return $b_pinned - $a_pinned;
                     }
-                    return strtotime( $b->post_date ) - strtotime( $a->post_date );
+
+                    if ( 'event_date' === $sort_by ) {
+                        $a_val = strtotime( (string) $a->event_start );
+                        $b_val = strtotime( (string) $b->event_start );
+                    } else {
+                        $a_val = strtotime( $a->post_date );
+                        $b_val = strtotime( $b->post_date );
+                    }
+
+                    return ( $a_val - $b_val ) * $sort_multiplier;
                 } );
+
+                // Filtro Tutti/Pubblicati/Scaduti: sia in "Tutti gli Eventi"
+                // (admin) sia in "I Miei Eventi" (utente).
+                $list_status = isset( $_GET['list_status'] ) ? sanitize_key( wp_unslash( $_GET['list_status'] ) ) : '';
+                if ( ! in_array( $list_status, [ 'publish', 'expired' ], true ) ) {
+                    $list_status = '';
+                }
+
+                if ( 'publish' === $list_status ) {
+                    $user_posts = array_values( array_filter( $user_posts, function( $p ) {
+                        return 'publish' === $p->post_status && ! $p->is_expired;
+                    } ) );
+                } elseif ( 'expired' === $list_status ) {
+                    $user_posts = array_values( array_filter( $user_posts, function( $p ) {
+                        return $p->is_expired;
+                    } ) );
+                }
+
+                // Paginazione: solo nella pagina admin "Tutti gli Eventi", che
+                // su un sito attivo puo' avere molti eventi.
+                if ( $is_admin_view ) {
+                    $per_page     = 30;
+                    $total_items  = count( $user_posts );
+                    $total_pages  = (int) ceil( $total_items / $per_page );
+                    $current_page = isset( $_GET['epage'] ) ? max( 1, intval( $_GET['epage'] ) ) : 1;
+                    if ( $total_pages && $current_page > $total_pages ) {
+                        $current_page = $total_pages;
+                    }
+                    $user_posts = array_slice( $user_posts, ( $current_page - 1 ) * $per_page, $per_page );
+                }
             }
 
             include OPEN_EVENTS_PLUGIN_DIR . 'includes/events-manager/templates/items-list.php';
@@ -849,6 +1026,16 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
 
             if ( ! $is_admin_view && intval( $edit_post->post_author ) !== $current_user_id ) {
                 echo '<div class="em-alert error">' . esc_html__( 'Non hai i permessi per modificare questo elemento.', 'open-events' ) . '</div>';
+                if ( $show_sidebar ) {
+                    echo '</div></div>';
+                }
+                return;
+            }
+
+            // Un evento già pubblicato non è più modificabile dal proprietario:
+            // solo un amministratore può intervenire su un evento live.
+            if ( ! $is_admin_view && 'tribe_events' === $post_type && 'publish' === $edit_post->post_status ) {
+                echo '<div class="em-alert error">' . esc_html__( 'Questo evento è già pubblicato: solo un amministratore può modificarlo.', 'open-events' ) . '</div>';
                 if ( $show_sidebar ) {
                     echo '</div></div>';
                 }
@@ -1161,9 +1348,32 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                     if ( ! empty( $redirect ) ) {
                         $redirect_target = $redirect;
                     } elseif ( 'hub' === $action_mode ) {
-                        $redirect_target = remove_query_arg( [ 'edit_id', 'action', 'type' ] ); 
+                        $redirect_target = remove_query_arg( [ 'edit_id', 'action', 'type' ] );
                     } elseif ( 'dashboard' === $action_mode ) {
                         $redirect_target = remove_query_arg( [ 'edit_id', 'action', 'type' ] );
+                    }
+
+                    // "Evento Consigliato" (Stripe): se spuntato e non già attivo/in
+                    // attesa, verifica lo slot settimanale e avvia il pagamento.
+                    // Riusa $redirect_target come destinazione di ritorno dopo
+                    // Stripe (o la pagina corrente se non ce n'era una), poi lo
+                    // sovrascrive con l'URL della Checkout Session cosi' il blocco
+                    // di redirect qui sotto — già esistente — ci porta l'utente
+                    // senza bisogno di una nuova logica di redirect.
+                    if ( 'tribe_events' === $post_type && isset( $_POST['want_featured'] )
+                        && ! in_array( get_post_meta( $post_id, '_illi_featured_status', true ), [ 'paid', 'pending_payment' ], true ) ) {
+                        $return_to = ! empty( $redirect_target ) ? $redirect_target : remove_query_arg( [ 'edit_id', 'action', 'type' ] );
+                        $checkout_result = open_events_featured_start_checkout_flow( $post_id, $return_to );
+
+                        if ( is_wp_error( $checkout_result ) ) {
+                            // Forza la visualizzazione del messaggio d'errore invece di un
+                            // eventuale redirect automatico già previsto (hub/dashboard),
+                            // che altrimenti lo farebbe sparire senza che l'utente lo veda.
+                            $redirect_target = '';
+                            $error_msg = sprintf( esc_html__( 'Evento salvato, ma non è stato possibile avviare il pagamento per "Consigliato": %s', 'open-events' ), $checkout_result->get_error_message() );
+                        } else {
+                            $redirect_target = $checkout_result;
+                        }
                     }
 
                     if ( ! empty( $redirect_target ) ) {

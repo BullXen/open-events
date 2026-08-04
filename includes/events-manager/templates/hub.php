@@ -4,7 +4,7 @@ namespace OpenEvents;
  * Vista "Dashboard" (hub home). Incluso da Widget_Events_Manager::render()
  * con `include`: condivide lo scope locale del metodo chiamante ($this,
  * $current_user_id, $current_user, $is_admin_view, $settings,
- * $hub_new_events/venues/organizers).
+ * $hub_new_events/venues/organizers/consigliati).
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 ?>
@@ -80,6 +80,19 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
                 </div>
                 <h4><?php esc_html_e( 'Statistiche', 'open-events' ); ?></h4>
                 <p><?php esc_html_e( 'Eventi pubblicati, online, visualizzazioni schede e altri numeri chiave.', 'open-events' ); ?></p>
+                <span class="em-card-btn"><?php esc_html_e( 'Accedi', 'open-events' ); ?> &rarr;</span>
+            </a>
+
+            <!-- Consigliati (solo admin) -->
+            <a href="<?php echo esc_url( add_query_arg( 'view', 'consigliati' ) ); ?>" class="em-hub-card em-consigliati-card">
+                <?php if ( $hub_new_consigliati > 0 ) : ?>
+                    <span class="em-hub-badge"><?php echo esc_html( $hub_new_consigliati ); ?></span>
+                <?php endif; ?>
+                <div class="em-card-icon">
+                    <?php $this->render_icon( 'star' ); ?>
+                </div>
+                <h4><?php esc_html_e( 'Consigliati', 'open-events' ); ?></h4>
+                <p><?php esc_html_e( 'Eventi con promozione a pagamento: stato pagamenti, conferme e revoche manuali.', 'open-events' ); ?></p>
                 <span class="em-card-btn"><?php esc_html_e( 'Accedi', 'open-events' ); ?> &rarr;</span>
             </a>
         <?php endif; ?>
