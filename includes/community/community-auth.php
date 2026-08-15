@@ -17,6 +17,42 @@ function open_events_community_redirect_with_error( $error_code, $tab = 'accedi'
 }
 
 /**
+ * Verifica il token reCAPTCHA v3 lato server (wp_remote_post, nessun SDK,
+ * stesso approccio homemade già usato per Stripe/OAuth). true solo se Google
+ * conferma la richiesta come genuina ("success"), l'azione dichiarata
+ * corrisponde ("register", evita il riuso di un token ottenuto altrove) e il
+ * punteggio antibot è pari o sopra la soglia configurata.
+ */
+function open_events_community_verify_recaptcha( $token ) {
+	$settings = open_events_get_community_settings();
+	if ( empty( $settings['recaptcha']['enabled'] ) || empty( $settings['recaptcha']['site_key'] ) ) {
+		return true;
+	}
+	if ( empty( $settings['recaptcha']['secret_key'] ) || '' === trim( (string) $token ) ) {
+		return false;
+	}
+
+	$response = wp_remote_post( 'https://www.google.com/recaptcha/api/siteverify', [
+		'body'    => [
+			'secret'   => $settings['recaptcha']['secret_key'],
+			'response' => $token,
+			'remoteip' => $_SERVER['REMOTE_ADDR'] ?? '',
+		],
+		'timeout' => 10,
+	] );
+
+	if ( is_wp_error( $response ) ) {
+		return false;
+	}
+
+	$data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+	return ! empty( $data['success'] )
+		&& 'register' === ( $data['action'] ?? '' )
+		&& (float) ( $data['score'] ?? 0 ) >= (float) $settings['recaptcha']['threshold'];
+}
+
+/**
  * user_login non è richiesto nel form pubblico (solo email, come da
  * documento di feature): genera uno username interno univoco a partire
  * dalla parte locale dell'email.
@@ -45,6 +81,21 @@ function open_events_community_handle_register() {
 	$settings = open_events_get_community_settings();
 	if ( empty( $settings['registration_enabled'] ) ) {
 		open_events_community_redirect_with_error( 'registration_disabled', 'registrati' );
+	}
+
+	// Anti-bot: honeypot (campo nascosto che solo un bot compila) + time-trap
+	// (un form inviato troppo velocemente non è stato compilato da un
+	// umano). Errore generico di proposito, per non rivelare a chi ci
+	// prova quale dei due controlli ha fatto scattare il blocco.
+	if ( '' !== trim( (string) ( $_POST['website'] ?? '' ) ) ) {
+		open_events_community_redirect_with_error( 'registration_failed', 'registrati' );
+	}
+	$submitted_at = absint( $_POST['oe_reg_ts'] ?? 0 );
+	if ( ! $submitted_at || ( time() - $submitted_at ) < 3 ) {
+		open_events_community_redirect_with_error( 'registration_failed', 'registrati' );
+	}
+	if ( ! open_events_community_verify_recaptcha( $_POST['recaptcha_token'] ?? '' ) ) {
+		open_events_community_redirect_with_error( 'recaptcha_failed', 'registrati' );
 	}
 
 	$email      = sanitize_email( wp_unslash( $_POST['user_email'] ?? '' ) );

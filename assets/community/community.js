@@ -30,6 +30,39 @@
 
     document.querySelectorAll('.oe-community').forEach(initCommunityAuth);
 
+    // reCAPTCHA v3: il token va generato in modo asincrono subito prima
+    // dell'invio (ha vita breve), quindi intercettiamo il submit, chiediamo
+    // il token a Google, lo mettiamo nel campo nascosto e solo allora
+    // inviamo davvero il form.
+    function initRecaptchaForm(form) {
+        var siteKey = form.dataset.recaptchaSiteKey;
+        var tokenField = form.querySelector('.oe-recaptcha-token');
+        if (!siteKey || !tokenField) {
+            return;
+        }
+
+        form.addEventListener('submit', function (e) {
+            if (tokenField.value) {
+                return; // Token già ottenuto (secondo tentativo di submit).
+            }
+            e.preventDefault();
+
+            if (typeof grecaptcha === 'undefined') {
+                form.submit(); // Script Google non caricato: lascia decidere al server.
+                return;
+            }
+
+            grecaptcha.ready(function () {
+                grecaptcha.execute(siteKey, { action: 'register' }).then(function (token) {
+                    tokenField.value = token;
+                    form.submit();
+                });
+            });
+        });
+    }
+
+    document.querySelectorAll('form[data-recaptcha-site-key]').forEach(initRecaptchaForm);
+
     // Utente già loggato che riapre la pagina di login: conto alla rovescia
     // e redirect automatico alla dashboard (l'utente può comunque cliccare
     // "Vai subito" o "Esci" prima che scada).

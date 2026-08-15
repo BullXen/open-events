@@ -5,7 +5,7 @@ namespace OpenEvents;
  * Incluso da Widget_Community_Auth::render() con `include`: condivide lo
  * scope locale del metodo chiamante ($this, $settings, $initial_tab,
  * $error_code, $redirect_to, $show_register_tab, $side_image_url,
- * $side_image_position, $is_editor_preview).
+ * $side_image_position, $is_editor_preview, $recaptcha_enabled).
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
@@ -42,6 +42,7 @@ $error_messages = [
 	'email_exists'         => esc_html__( 'Esiste già un account con questa email. Prova ad accedere.', 'open-events' ),
 	'weak_password'        => esc_html__( 'La password deve essere di almeno 8 caratteri.', 'open-events' ),
 	'registration_failed'  => esc_html__( 'Registrazione non riuscita, riprova.', 'open-events' ),
+	'recaptcha_failed'     => esc_html__( 'Verifica antibot non superata. Riprova, magari da un altro browser o rete.', 'open-events' ),
 	'oauth_not_configured'    => esc_html__( 'Accesso social non configurato correttamente.', 'open-events' ),
 	'oauth_state_invalid'     => esc_html__( 'Sessione di accesso scaduta, riprova.', 'open-events' ),
 	'oauth_token_exchange_failed' => esc_html__( 'Accesso non riuscito, riprova.', 'open-events' ),
@@ -111,10 +112,18 @@ if ( $side_image_url ) {
 
 	<?php if ( $show_register_tab ) : ?>
 		<div class="oe-community-panel" data-panel="registrati">
-			<form method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<form method="POST" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" <?php echo $recaptcha_enabled ? 'data-recaptcha-site-key="' . esc_attr( $settings['recaptcha']['site_key'] ) . '"' : ''; ?>>
 				<input type="hidden" name="action" value="oe_community_register">
 				<input type="hidden" name="oe_community_action" value="register">
 				<?php wp_nonce_field( 'oe_community_register', 'oe_community_nonce' ); ?>
+				<input type="hidden" name="oe_reg_ts" value="<?php echo esc_attr( time() ); ?>">
+				<div class="oe-hp-field" aria-hidden="true">
+					<label for="oe_reg_website"><?php esc_html_e( 'Sito web', 'open-events' ); ?></label>
+					<input type="text" id="oe_reg_website" name="website" tabindex="-1" autocomplete="off">
+				</div>
+				<?php if ( $recaptcha_enabled ) : ?>
+					<input type="hidden" name="recaptcha_token" class="oe-recaptcha-token">
+				<?php endif; ?>
 
 				<?php if ( 'hidden' !== ( $fields['first_name'] ?? 'optional' ) ) : ?>
 					<div class="oe-community-field">

@@ -4,7 +4,7 @@ namespace OpenEvents;
  * Vista "Dashboard" (hub home). Incluso da Widget_Events_Manager::render()
  * con `include`: condivide lo scope locale del metodo chiamante ($this,
  * $current_user_id, $current_user, $is_admin_view, $settings,
- * $hub_new_events/venues/organizers/consigliati).
+ * $hub_new_events/venues/organizers/consigliati/users).
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 ?>
@@ -65,6 +65,9 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
         <?php if ( $is_admin_view ) : ?>
             <!-- Utenti (solo admin) -->
             <a href="<?php echo esc_url( add_query_arg( 'view', 'users' ) ); ?>" class="em-hub-card em-users-card">
+                <?php if ( $hub_new_users > 0 ) : ?>
+                    <span class="em-hub-badge"><?php echo esc_html( $hub_new_users ); ?></span>
+                <?php endif; ?>
                 <div class="em-card-icon">
                     <?php $this->render_icon( 'users' ); ?>
                 </div>

@@ -4,7 +4,7 @@ Tags: events, elementor, the-events-calendar, front-end submission
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.8.5
+Stable tag: 1.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,15 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * I nuovi eventi vengono salvati come "in attesa di revisione" (pending) cosi' un amministratore puo' approvarli prima della pubblicazione; luoghi e organizzatori restano in bozza.
 
 == Changelog ==
+
+= 1.9.0 =
+* Nuovo: Google reCAPTCHA v3 (invisibile) sulla registrazione Community, in aggiunta a honeypot e time-trap già presenti — configurabile da Open Events → Community (chiavi + soglia punteggio minimo).
+
+= 1.8.7 =
+* Fix: nella scheda evento di "Ricerca Eventi" veniva mostrata solo la prima categoria quando un evento ne aveva più di una (es. "Musica" e "Cibo"); ora compaiono tutte.
+
+= 1.8.6 =
+* Nuovo: protezione anti-bot sulla registrazione Community (honeypot + controllo tempo minimo di compilazione) — nessun servizio esterno/chiave API, blocca le registrazioni automatiche più comuni.
 
 = 1.8.5 =
 * Migliorato il badge "Consigliato": testo ora in maiuscolo ovunque compare (schede evento "Ricerca Eventi", dashboard, calendario pubblico), come già fatto per "in primo piano".

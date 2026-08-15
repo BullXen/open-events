@@ -365,11 +365,12 @@ function open_events_search_render_card( $event_id ) {
 		$comune = get_post_meta( $venue_id, '_VenueCity', true );
 	}
 
-	// Prima categoria come badge.
-	$cat_name = '';
-	$terms    = get_the_terms( $event_id, 'tribe_events_cat' );
+	// Tutte le categorie dell'evento, un badge per ciascuna (prima si mostrava
+	// solo $terms[0], nascondendo le altre quando un evento ne aveva più di una).
+	$cat_names = [];
+	$terms     = get_the_terms( $event_id, 'tribe_events_cat' );
 	if ( $terms && ! is_wp_error( $terms ) ) {
-		$cat_name = $terms[0]->name;
+		$cat_names = wp_list_pluck( $terms, 'name' );
 	}
 
 	$featured_label = open_events_get_featured_label();
@@ -386,9 +387,9 @@ function open_events_search_render_card( $event_id ) {
 		<?php endif; ?>
 
 		<div class="oes-card-badges">
-			<?php if ( $cat_name ) : ?>
+			<?php foreach ( $cat_names as $cat_name ) : ?>
 				<span class="oes-card-cat"><?php echo esc_html( $cat_name ); ?></span>
-			<?php endif; ?>
+			<?php endforeach; ?>
 			<?php if ( $featured ) : ?>
 				<span class="oes-card-featured">
 					<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>

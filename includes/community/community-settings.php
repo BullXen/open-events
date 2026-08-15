@@ -36,6 +36,12 @@ function open_events_get_community_settings() {
 			'app_id'    => '',
 			'app_secret'=> '',
 		],
+		'recaptcha'                => [
+			'enabled'    => false,
+			'site_key'   => '',
+			'secret_key' => '',
+			'threshold'  => 0.5,
+		],
 		'import_social_avatar'     => true,
 		'emails'                   => [
 			'sender_name'  => get_bloginfo( 'name' ),
@@ -152,6 +158,12 @@ function open_events_render_community_settings_page() {
 				'enabled'    => isset( $_POST['facebook_enabled'] ),
 				'app_id'     => sanitize_text_field( wp_unslash( $_POST['facebook_app_id'] ?? '' ) ),
 				'app_secret' => sanitize_text_field( wp_unslash( $_POST['facebook_app_secret'] ?? '' ) ),
+			],
+			'recaptcha'               => [
+				'enabled'    => isset( $_POST['recaptcha_enabled'] ),
+				'site_key'   => sanitize_text_field( wp_unslash( $_POST['recaptcha_site_key'] ?? '' ) ),
+				'secret_key' => sanitize_text_field( wp_unslash( $_POST['recaptcha_secret_key'] ?? '' ) ),
+				'threshold'  => min( 1, max( 0, (float) ( $_POST['recaptcha_threshold'] ?? 0.5 ) ) ),
 			],
 			'import_social_avatar'    => isset( $_POST['import_social_avatar'] ),
 			'emails'                  => [
@@ -326,6 +338,31 @@ function open_events_render_community_settings_page() {
 						<p class="description">
 							<?php esc_html_e( 'Crea un\'app su Meta for Developers (prodotto "Accesso Facebook"), e imposta come "URI di reindirizzamento OAuth validi" esattamente questo indirizzo:', 'open-events' ); ?><br>
 							<code><?php echo esc_html( admin_url( 'admin-post.php?action=oe_community_facebook_callback' ) ); ?></code>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'reCAPTCHA v3 (anti-bot registrazione)', 'open-events' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="recaptcha_enabled" value="1" <?php checked( $settings['recaptcha']['enabled'] ); ?>>
+							<?php esc_html_e( 'Attivo', 'open-events' ); ?>
+						</label>
+						<p>
+							<label for="oe_recaptcha_site_key"><?php esc_html_e( 'Chiave sito', 'open-events' ); ?></label><br>
+							<input type="text" id="oe_recaptcha_site_key" name="recaptcha_site_key" class="regular-text" value="<?php echo esc_attr( $settings['recaptcha']['site_key'] ); ?>">
+						</p>
+						<p>
+							<label for="oe_recaptcha_secret_key"><?php esc_html_e( 'Chiave segreta', 'open-events' ); ?></label><br>
+							<input type="password" id="oe_recaptcha_secret_key" name="recaptcha_secret_key" class="regular-text" value="<?php echo esc_attr( $settings['recaptcha']['secret_key'] ); ?>" autocomplete="off">
+						</p>
+						<p>
+							<label for="oe_recaptcha_threshold"><?php esc_html_e( 'Soglia punteggio minimo (0-1)', 'open-events' ); ?></label><br>
+							<input type="number" id="oe_recaptcha_threshold" name="recaptcha_threshold" step="0.1" min="0" max="1" value="<?php echo esc_attr( $settings['recaptcha']['threshold'] ); ?>">
+						</p>
+						<p class="description">
+							<?php esc_html_e( 'Crea le chiavi su Google reCAPTCHA (tipo v3), dominio del sito. Sotto la soglia impostata la registrazione viene rifiutata come probabile bot; 0.5 è un buon punto di partenza.', 'open-events' ); ?><br>
+							<a href="https://www.google.com/recaptcha/admin/create" target="_blank" rel="noopener">https://www.google.com/recaptcha/admin/create</a>
 						</p>
 					</td>
 				</tr>

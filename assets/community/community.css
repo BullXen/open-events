@@ -101,6 +101,16 @@
 .oe-community-field {
     margin-bottom: 20px;
 }
+/* Honeypot anti-bot: fuori schermo invece di display:none, che alcuni bot
+   riconoscono e saltano. Invisibile e non raggiungibile da tastiera/screen
+   reader per un utente reale. */
+.oe-hp-field {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
 .oe-community-field label {
     display: block;
     font-size: 14px;

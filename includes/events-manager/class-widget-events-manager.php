@@ -390,6 +390,28 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
         update_user_meta( $current_user_id, '_oe_hub_seen_' . $post_type, time() );
     }
 
+    /**
+     * Stesso pattern di hub_new_count(), ma sugli utenti WordPress (non un
+     * post_type): conta le nuove registrazioni dall'ultima visita admin alla
+     * sezione "Utenti". user_registered è già in GMT (come post_date_gmt),
+     * stesso confronto con gmdate( time() ) usato sopra.
+     */
+    private function hub_new_users_count( $current_user_id ) {
+        $meta_key  = '_oe_hub_seen_users';
+        $last_seen = get_user_meta( $current_user_id, $meta_key, true );
+
+        if ( '' === $last_seen ) {
+            update_user_meta( $current_user_id, $meta_key, time() );
+            return 0;
+        }
+
+        global $wpdb;
+        return (int) $wpdb->get_var( $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->users} WHERE user_registered > %s",
+            gmdate( 'Y-m-d H:i:s', (int) $last_seen )
+        ) );
+    }
+
     /** Pubblica subito un singolo post (usato sia per un elemento singolo che per ogni data di una serie). */
     private function publish_post_now( $post_id ) {
         $post = get_post( $post_id );
@@ -450,7 +472,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                 $post_type = '';
             }
             // L'utente sta aprendo la sezione: il badge "nuovi" si azzera.
-            if ( in_array( $post_type, [ 'tribe_events', 'tribe_organizer', 'tribe_venue' ], true ) ) {
+            if ( in_array( $post_type, [ 'tribe_events', 'tribe_organizer', 'tribe_venue', 'users' ], true ) ) {
                 $this->hub_mark_seen( $post_type, $current_user_id );
             }
         } else {
@@ -856,6 +878,7 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
             $hub_new_venues     = $this->hub_new_count( 'tribe_venue', $is_admin_view, $current_user_id );
             $hub_new_organizers = $this->hub_new_count( 'tribe_organizer', $is_admin_view, $current_user_id );
             $hub_new_consigliati = $is_admin_view ? open_events_featured_hub_new_count( $current_user_id ) : 0;
+            $hub_new_users      = $is_admin_view ? $this->hub_new_users_count( $current_user_id ) : 0;
 
             include OPEN_EVENTS_PLUGIN_DIR . 'includes/events-manager/templates/hub.php';
 

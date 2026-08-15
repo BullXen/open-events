@@ -296,6 +296,22 @@ class Widget_Community_Auth extends \Elementor\Widget_Base {
 		$side_image_url = trim( $widget_settings['side_image']['url'] ?? '' );
 		$side_image_position = ( 'sinistra' === ( $widget_settings['side_image_position'] ?? 'destra' ) ) ? 'sinistra' : 'destra';
 
+		// Script caricato solo qui (non in open_events_register_assets(), che
+		// registra asset statici): l'URL di reCAPTCHA v3 incorpora la chiave
+		// sito, quindi va costruito con le impostazioni correnti.
+		$recaptcha_enabled = $show_register_tab
+			&& ! empty( $settings['recaptcha']['enabled'] )
+			&& ! empty( $settings['recaptcha']['site_key'] );
+		if ( $recaptcha_enabled ) {
+			wp_enqueue_script(
+				'open-events-recaptcha',
+				'https://www.google.com/recaptcha/api.js?render=' . rawurlencode( $settings['recaptcha']['site_key'] ),
+				[],
+				null,
+				true
+			);
+		}
+
 		// Nell'editor di Elementor si è sempre loggati (serve un account per
 		// modificare la pagina): senza questo controllo non si vedrebbero mai
 		// i form, solo il messaggio "hai già effettuato l'accesso", rendendo
