@@ -193,11 +193,25 @@ function open_events_search_date_range( $date_mode, $filters ) {
 }
 
 /**
+ * Un evento va in cima ai risultati se è "in primo piano" (flag manuale) o se
+ * è un evento "Consigliato" pagato nella sua finestra pubblica attiva (ultimi
+ * 7 giorni prima dell'inizio, vedi open_events_featured_is_public_active() in
+ * includes/featured-events/featured-events-slots.php) — stessa regola usata
+ * per il calendario pubblico di TEC in open-events.php, qui perché questa
+ * ricerca ha una sua query/rendering completamente separati dalle Views v2.
+ */
+function open_events_search_is_boosted( $event_id ) {
+	return '1' === get_post_meta( $event_id, '_tribe_featured', true )
+		|| open_events_featured_is_public_active( $event_id );
+}
+
+/**
  * Esegue la ricerca e ritorna gli ID evento gia' ordinati: prima gli eventi
- * "in primo piano", poi per data di inizio crescente. L'ordinamento e' fatto
- * in PHP di proposito — durante una richiesta admin-ajax is_admin() e' true,
- * quindi il filtro che fissa i featured in cima al calendario pubblico non
- * scatta, e non possiamo affidarci ad esso qui.
+ * "in primo piano"/Consigliati attivi, poi per data di inizio crescente.
+ * L'ordinamento e' fatto in PHP di proposito — durante una richiesta
+ * admin-ajax is_admin() e' true, quindi il filtro che fissa i featured in
+ * cima al calendario pubblico non scatta, e non possiamo affidarci ad esso
+ * qui.
  */
 function open_events_search_query( array $filters ) {
 	list( $range_start, $range_end ) = open_events_search_date_range( $filters['date_mode'], $filters );
@@ -280,12 +294,12 @@ function open_events_search_query( array $filters ) {
 		return [];
 	}
 
-	// Ordina: featured prima, poi data inizio crescente.
+	// Ordina: featured/Consigliati attivi prima, poi data inizio crescente.
 	usort(
 		$ids,
 		function ( $a, $b ) {
-			$a_featured = '1' === get_post_meta( $a, '_tribe_featured', true ) ? 1 : 0;
-			$b_featured = '1' === get_post_meta( $b, '_tribe_featured', true ) ? 1 : 0;
+			$a_featured = open_events_search_is_boosted( $a ) ? 1 : 0;
+			$b_featured = open_events_search_is_boosted( $b ) ? 1 : 0;
 			if ( $a_featured !== $b_featured ) {
 				return $b_featured - $a_featured;
 			}
@@ -324,7 +338,11 @@ function open_events_search_render_card( $event_id ) {
 	$permalink = get_permalink( $event_id );
 	$title     = get_the_title( $event_id );
 	$thumb     = get_the_post_thumbnail_url( $event_id, 'medium_large' );
-	$featured  = '1' === get_post_meta( $event_id, '_tribe_featured', true );
+	$featured    = '1' === get_post_meta( $event_id, '_tribe_featured', true );
+	// Il badge è immediato dal pagamento (stessa regola della dashboard "I
+	// Miei Eventi"); il boost in cima ai risultati invece è più restrittivo,
+	// vedi open_events_search_is_boosted() sopra — sono due cose diverse.
+	$recommended = open_events_featured_is_active( $event_id );
 
 	$start   = get_post_meta( $event_id, '_EventStartDate', true );
 	$all_day = '1' === (string) get_post_meta( $event_id, '_EventAllDay', true );
@@ -347,18 +365,19 @@ function open_events_search_render_card( $event_id ) {
 		$comune = get_post_meta( $venue_id, '_VenueCity', true );
 	}
 
-	// Prima categoria come badge.
-	$cat_name = '';
-	$terms    = get_the_terms( $event_id, 'tribe_events_cat' );
+	// Tutte le categorie dell'evento, un badge per ciascuna (prima si mostrava
+	// solo $terms[0], nascondendo le altre quando un evento ne aveva più di una).
+	$cat_names = [];
+	$terms     = get_the_terms( $event_id, 'tribe_events_cat' );
 	if ( $terms && ! is_wp_error( $terms ) ) {
-		$cat_name = $terms[0]->name;
+		$cat_names = wp_list_pluck( $terms, 'name' );
 	}
 
 	$featured_label = open_events_get_featured_label();
 
 	ob_start();
 	?>
-	<article class="oes-card<?php echo $featured ? ' is-featured' : ''; ?>" tabindex="0" data-href="<?php echo esc_url( $permalink ); ?>">
+	<article class="oes-card<?php echo $featured ? ' is-featured' : ''; ?><?php echo $recommended ? ' is-recommended' : ''; ?>" tabindex="0" data-href="<?php echo esc_url( $permalink ); ?>">
 		<?php if ( $thumb ) : ?>
 			<img class="oes-card-bg" src="<?php echo esc_url( $thumb ); ?>" alt="" loading="lazy">
 		<?php else : ?>
@@ -368,13 +387,19 @@ function open_events_search_render_card( $event_id ) {
 		<?php endif; ?>
 
 		<div class="oes-card-badges">
-			<?php if ( $cat_name ) : ?>
+			<?php foreach ( $cat_names as $cat_name ) : ?>
 				<span class="oes-card-cat"><?php echo esc_html( $cat_name ); ?></span>
-			<?php endif; ?>
+			<?php endforeach; ?>
 			<?php if ( $featured ) : ?>
 				<span class="oes-card-featured">
 					<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 					<?php echo esc_html( $featured_label ); ?>
+				</span>
+			<?php endif; ?>
+			<?php if ( $recommended ) : ?>
+				<span class="oes-card-recommended">
+					<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+					<?php esc_html_e( 'Consigliato', 'open-events' ); ?>
 				</span>
 			<?php endif; ?>
 		</div>

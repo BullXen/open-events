@@ -3,7 +3,7 @@
 Plugin Name: Open Events
 Plugin URI: https://github.com/BullXen/open-events
 Description: Plugin per la gestione di eventi. Aggiunge a Elementor un widget che permette agli utenti loggati di gestire da front-end eventi, luoghi e organizzatori (The Events Calendar) come un portale.
-Version: 1.1.1
+Version: 1.9.0
 Author: BullXen
 GitHub Plugin URI: BullXen/open-events
 Primary Branch: main
@@ -14,17 +14,47 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OPEN_EVENTS_VERSION', '1.1.0' );
+define( 'OPEN_EVENTS_VERSION', '1.9.0' );
 define( 'OPEN_EVENTS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OPEN_EVENTS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 // Richiesto sempre (non solo in admin): il widget front-end legge
 // open_events_get_default_event_status() quando un utente salva un evento.
-require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/admin-settings.php';
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/core/admin-settings.php';
 
 // Richiesto sempre: registra gli handler AJAX della Ricerca Eventi, che
 // vengono serviti da admin-ajax.php (dove il widget Elementor non è caricato).
-require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/events-search.php';
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/events-search/events-search.php';
+
+/**
+ * La cache "Elementi" di Elementor (Impostazioni → Performance) mette in
+ * cache l'HTML dell'intera pagina fino a 24h, IDENTICO per ogni visitatore,
+ * senza distinguere loggato/anonimo. Sulle pagine coi widget Community Auth
+ * o Front-end Events Manager (contenuto diverso per ogni utente) questo fa
+ * sembrare che il login "non tenga la sessione": in realtà il cookie è
+ * valido, è la pagina che serve uno stato congelato a chi ce l'ha già
+ * generato per primo. Bypassiamo la cache SOLO per i visitatori loggati:
+ * chi non ha effettuato l'accesso continua a beneficiarne normalmente.
+ */
+add_filter( 'pre_option_elementor_element_cache_ttl', function( $value ) {
+	return is_user_logged_in() ? 'disable' : $value;
+} );
+
+// Richiesto sempre (non solo in admin): i filtri login_url/register_url/
+// login_redirect/authenticate e gli handler admin-post.php di Community
+// devono essere attivi su ogni pagina del sito, non solo dove c'è il widget.
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/community/community-settings.php';
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/community/community-auth.php';
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/community/community-oauth.php';
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/community/community-emails.php';
+
+// Richiesto sempre: il checkbox "Consigliato" nel form evento, il webhook
+// REST di Stripe e la pagina di ritorno dal Checkout devono funzionare su
+// ogni pagina del sito, non solo dove Elementor carica il widget.
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/featured-events/featured-events-settings.php';
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/featured-events/featured-events-slots.php';
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/featured-events/featured-events-stripe.php';
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/featured-events/featured-events-webhook.php';
 
 /**
  * Porta in cima gli eventi "in primo piano" (_tribe_featured) anche nel
@@ -41,6 +71,13 @@ require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/events-search.php';
  * FALSE per le query costruite dalla ORM del calendario pubblico — proprio
  * quelle che ci interessano (verificato: con quel controllo il filtro non
  * veniva mai applicato e l'evento in primo piano non finiva mai in testa).
+ *
+ * Stesso boost anche per un evento "Consigliato" (pagamento Stripe andato a
+ * buon fine, _illi_featured_status = 'paid'), ma SOLO negli ultimi 7 giorni
+ * prima dell'inizio evento — non da subito dopo il pagamento, che può
+ * avvenire settimane prima (vedi open_events_featured_is_public_active() in
+ * includes/featured-events/featured-events-slots.php per lo stesso check
+ * lato PHP, usato per il badge).
  */
 function open_events_pin_featured_events_clauses( $clauses, $query ) {
 	if ( is_admin() ) {
@@ -56,7 +93,7 @@ function open_events_pin_featured_events_clauses( $clauses, $query ) {
 	}
 
 	// posts_clauses puo' scattare piu' volte sulla stessa query (es. query
-	// principale + conteggio): senza questo guard il LEFT JOIN verrebbe aggiunto
+	// principale + conteggio): senza questo guard i LEFT JOIN verrebbero aggiunti
 	// due volte con lo stesso alias, generando un errore SQL "Not unique table".
 	if ( false !== strpos( $clauses['join'], 'oe_featured_meta' ) ) {
 		return $clauses;
@@ -64,8 +101,19 @@ function open_events_pin_featured_events_clauses( $clauses, $query ) {
 
 	global $wpdb;
 	$clauses['join'] .= " LEFT JOIN {$wpdb->postmeta} AS oe_featured_meta ON ( {$wpdb->posts}.ID = oe_featured_meta.post_id AND oe_featured_meta.meta_key = '_tribe_featured' )";
+	$clauses['join'] .= " LEFT JOIN {$wpdb->postmeta} AS oe_recommended_status ON ( {$wpdb->posts}.ID = oe_recommended_status.post_id AND oe_recommended_status.meta_key = '_illi_featured_status' )";
+	$clauses['join'] .= " LEFT JOIN {$wpdb->postmeta} AS oe_recommended_start ON ( {$wpdb->posts}.ID = oe_recommended_start.post_id AND oe_recommended_start.meta_key = '_EventStartDate' )";
 
-	$featured_order = "(oe_featured_meta.meta_value = '1') DESC";
+	$now        = current_time( 'mysql' );
+	$window_end = date( 'Y-m-d H:i:s', strtotime( $now . ' +7 days' ) );
+
+	$recommended_window = $wpdb->prepare(
+		"(oe_recommended_status.meta_value = 'paid' AND oe_recommended_start.meta_value BETWEEN %s AND %s)",
+		$now,
+		$window_end
+	);
+
+	$featured_order = "(oe_featured_meta.meta_value = '1' OR {$recommended_window}) DESC";
 	$clauses['orderby'] = $clauses['orderby'] ? $featured_order . ', ' . $clauses['orderby'] : $featured_order;
 
 	return $clauses;
@@ -88,7 +136,7 @@ function open_events_featured_badge_html() {
 	}
 
 	$style = 'display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 8px;'
-		. 'border-radius:20px;font-size:11px;font-weight:700;line-height:1.4;'
+		. 'border-radius:20px;font-size:11px;font-weight:700;line-height:1.4;text-transform:uppercase;'
 		. 'background-color:#fef3c7;color:#b45309;vertical-align:middle;';
 
 	return '<span class="oe-public-featured-badge" style="' . esc_attr( $style ) . '">'
@@ -97,13 +145,42 @@ function open_events_featured_badge_html() {
 }
 
 /**
- * Aggiunge l'etichetta "in primo piano" subito dopo il titolo dell'evento nelle
- * card del calendario pubblico di The Events Calendar (Views v2, incluse le
- * viste Pro). TEC di suo mostra solo un'icona con testo per screen-reader: qui
- * rendiamo il testo visibile a tutti i visitatori. Agganciato al filtro
- * `tribe_template_after_include_html:{template}` che passa l'HTML gia' generato
- * del titolo e l'istanza del template (da cui leggiamo l'evento e il suo
- * flag ->featured).
+ * Badge pubblico "Consigliato", stessa grafica del badge "in primo piano" ma
+ * col colore configurato in Open Events → Eventi Consigliati. Visibile da
+ * subito dopo il pagamento (open_events_featured_is_active(), stessa regola
+ * del badge nella dashboard "I Miei Eventi") fino a fine settimana promossa —
+ * a differenza della PRIORITÀ DI ORDINAMENTO (vedi
+ * open_events_pin_featured_events_clauses() sopra), che invece scatta solo
+ * negli ultimi 7 giorni prima dell'inizio evento. Sono due cose diverse di
+ * proposito: il badge premia subito chi ha pagato, il boost in cima
+ * all'elenco arriva solo quando l'evento è imminente.
+ */
+function open_events_recommended_badge_html() {
+	$color = '#b45309';
+	if ( function_exists( 'OpenEvents\\open_events_get_featured_events_settings' ) ) {
+		$settings = \OpenEvents\open_events_get_featured_events_settings();
+		if ( ! empty( $settings['featured_badge_color'] ) ) {
+			$color = $settings['featured_badge_color'];
+		}
+	}
+
+	$style = 'display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:2px 8px;'
+		. 'border-radius:20px;font-size:11px;font-weight:700;line-height:1.4;text-transform:uppercase;'
+		. 'background-color:#fef3c7;color:' . $color . ';vertical-align:middle;';
+
+	return '<span class="oe-public-recommended-badge" style="' . esc_attr( $style ) . '">'
+		. '<span aria-hidden="true">&#9733;</span> ' . esc_html__( 'Consigliato', 'open-events' )
+		. '</span>';
+}
+
+/**
+ * Aggiunge l'etichetta "in primo piano"/"Consigliato" subito dopo il titolo
+ * dell'evento nelle card del calendario pubblico di The Events Calendar
+ * (Views v2, incluse le viste Pro). TEC di suo mostra solo un'icona con testo
+ * per screen-reader: qui rendiamo il testo visibile a tutti i visitatori.
+ * Agganciato al filtro `tribe_template_after_include_html:{template}` che
+ * passa l'HTML gia' generato del titolo e l'istanza del template (da cui
+ * leggiamo l'evento, il suo flag ->featured e, per "Consigliato", il post ID).
  */
 function open_events_append_featured_label_to_title( $html, $file, $name, $template ) {
 	if ( ! is_object( $template ) || ! method_exists( $template, 'get' ) ) {
@@ -111,11 +188,19 @@ function open_events_append_featured_label_to_title( $html, $file, $name, $templ
 	}
 
 	$event = $template->get( 'event' );
-	if ( empty( $event ) || empty( $event->featured ) ) {
+	if ( empty( $event ) || empty( $event->ID ) ) {
 		return $html;
 	}
 
-	return $html . open_events_featured_badge_html();
+	if ( ! empty( $event->featured ) ) {
+		$html .= open_events_featured_badge_html();
+	}
+
+	if ( function_exists( 'OpenEvents\\open_events_featured_is_active' ) && \OpenEvents\open_events_featured_is_active( $event->ID ) ) {
+		$html .= open_events_recommended_badge_html();
+	}
+
+	return $html;
 }
 
 /**
@@ -173,38 +258,48 @@ function open_events_register_category( $elements_manager ) {
 }
 
 function open_events_register_widgets( $widgets_manager ) {
-	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/class-widget-events-manager.php';
+	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/events-manager/class-widget-events-manager.php';
 	$widgets_manager->register( new \OpenEvents\Widget_Events_Manager() );
 
-	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/class-widget-events-search.php';
+	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/events-search/class-widget-events-search.php';
 	$widgets_manager->register( new \OpenEvents\Widget_Events_Search() );
+
+	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/community/class-widget-community-auth.php';
+	$widgets_manager->register( new \OpenEvents\Widget_Community_Auth() );
 }
 
 function open_events_register_assets() {
 	wp_register_style(
 		'open-events-manager-style',
-		OPEN_EVENTS_PLUGIN_URL . 'assets/css/events-manager.css',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/events-manager/events-manager.css',
 		[],
 		OPEN_EVENTS_VERSION
 	);
 	wp_register_script(
 		'open-events-manager-script',
-		OPEN_EVENTS_PLUGIN_URL . 'assets/js/events-manager.js',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/events-manager/events-manager.js',
 		[ 'jquery', 'elementor-frontend' ],
 		OPEN_EVENTS_VERSION,
 		true
+	);
+	wp_localize_script(
+		'open-events-manager-script',
+		'openEventsManager',
+		[
+			'allowPastDates' => \OpenEvents\open_events_is_past_dates_enabled(),
+		]
 	);
 
 	// Ricerca Eventi: stile + script della barra di ricerca live.
 	wp_register_style(
 		'open-events-search-style',
-		OPEN_EVENTS_PLUGIN_URL . 'assets/css/events-search.css',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/events-search/events-search.css',
 		[],
 		OPEN_EVENTS_VERSION
 	);
 	wp_register_script(
 		'open-events-search-script',
-		OPEN_EVENTS_PLUGIN_URL . 'assets/js/events-search.js',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/events-search/events-search.js',
 		[ 'jquery', 'elementor-frontend' ],
 		OPEN_EVENTS_VERSION,
 		true
@@ -216,6 +311,21 @@ function open_events_register_assets() {
 			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 			'nonce'   => wp_create_nonce( 'open_events_search' ),
 		]
+	);
+
+	// Community Auth: stile + script del widget Accedi/Registrati.
+	wp_register_style(
+		'open-events-community-style',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/community/community.css',
+		[],
+		OPEN_EVENTS_VERSION
+	);
+	wp_register_script(
+		'open-events-community-script',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/community/community.js',
+		[],
+		OPEN_EVENTS_VERSION,
+		true
 	);
 }
 

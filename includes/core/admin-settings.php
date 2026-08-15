@@ -9,6 +9,9 @@ const FEATURED_LABEL_OPTION       = 'open_events_featured_label';
 const FEATURED_LIMIT_OPTION       = 'open_events_featured_limit';
 const PUBLISHED_BY_DISPLAY_OPTION = 'open_events_published_by_display';
 const VENUE_VISIBILITY_OPTION     = 'open_events_venue_visibility';
+const ALL_DAY_EVENT_OPTION        = 'open_events_enable_all_day_event';
+const RECURRING_EVENT_OPTION      = 'open_events_enable_recurring_event';
+const PAST_DATES_OPTION           = 'open_events_enable_past_dates';
 
 /**
  * Trova la posizione del menu "Eventi" (tribe_events) cosi' da inserire
@@ -105,6 +108,27 @@ function open_events_get_venue_visibility() {
 	$allowed = [ 'all', 'own' ];
 
 	return in_array( $mode, $allowed, true ) ? $mode : 'all';
+}
+
+/**
+ * Attiva/disattiva i campo "Evento Giornaliero" e "Evento con più date
+ * (ricorrente)" nel form di inserimento/modifica evento del widget
+ * front-end. Entrambi abilitati di default.
+ */
+function open_events_is_all_day_event_enabled() {
+	return '0' !== get_option( ALL_DAY_EVENT_OPTION, '1' );
+}
+
+function open_events_is_recurring_event_enabled() {
+	return '0' !== get_option( RECURRING_EVENT_OPTION, '1' );
+}
+
+/**
+ * Se disattivo (default), nei calendari del form evento non si possono
+ * selezionare/navigare mesi, anni o giorni precedenti a oggi.
+ */
+function open_events_is_past_dates_enabled() {
+	return '1' === get_option( PAST_DATES_OPTION, '0' );
 }
 
 /**
@@ -311,6 +335,11 @@ function open_events_render_settings_page() {
 			update_option( VENUE_VISIBILITY_OPTION, $venue_visibility );
 			$saved = true;
 		}
+
+		update_option( ALL_DAY_EVENT_OPTION, isset( $_POST['enable_all_day_event'] ) ? '1' : '0' );
+		update_option( RECURRING_EVENT_OPTION, isset( $_POST['enable_recurring_event'] ) ? '1' : '0' );
+		update_option( PAST_DATES_OPTION, isset( $_POST['enable_past_dates'] ) ? '1' : '0' );
+		$saved = true;
 	}
 
 	$current_status = open_events_get_default_event_status();
@@ -321,6 +350,9 @@ function open_events_render_settings_page() {
 	$current_featured_count = open_events_count_featured_events();
 	$current_published_by = open_events_get_published_by_display();
 	$current_venue_visibility = open_events_get_venue_visibility();
+	$current_all_day_enabled = open_events_is_all_day_event_enabled();
+	$current_recurring_enabled = open_events_is_recurring_event_enabled();
+	$current_past_dates_enabled = open_events_is_past_dates_enabled();
 	?>
 	<div class="wrap">
 		<h1><?php esc_html_e( 'Open Events - Impostazioni', 'open-events' ); ?></h1>
@@ -458,6 +490,45 @@ function open_events_render_settings_page() {
 
 							<p class="description">
 								<?php esc_html_e( 'Quali luoghi può scegliere l\'utente nel menu a tendina "Seleziona Luogo" quando inserisce un evento. "Tutti i luoghi" (predefinito) mostra ogni luogo pubblicato; "Solo i luoghi inseriti dall\'utente" limita la scelta ai luoghi creati da lui. Gli amministratori vedono comunque tutti i luoghi.', 'open-events' ); ?>
+							</p>
+						</fieldset>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Funzioni form Inserisci Evento', 'open-events' ); ?></th>
+					<td>
+						<fieldset>
+							<legend class="screen-reader-text"><?php esc_html_e( 'Funzioni form Inserisci Evento', 'open-events' ); ?></legend>
+
+							<label>
+								<input type="checkbox" name="enable_all_day_event" value="1" <?php checked( $current_all_day_enabled ); ?>>
+								<?php esc_html_e( 'Evento Giornaliero (Tutto il giorno)', 'open-events' ); ?>
+							</label><br>
+
+							<label>
+								<input type="checkbox" name="enable_recurring_event" value="1" <?php checked( $current_recurring_enabled ); ?>>
+								<?php esc_html_e( 'Evento ricorrente (con più date)', 'open-events' ); ?>
+							</label>
+
+							<p class="description">
+								<?php esc_html_e( 'Mostra o nasconde queste due opzioni nel form di inserimento/modifica evento del widget front-end.', 'open-events' ); ?>
+							</p>
+						</fieldset>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Date antecedenti', 'open-events' ); ?></th>
+					<td>
+						<fieldset>
+							<legend class="screen-reader-text"><?php esc_html_e( 'Date antecedenti', 'open-events' ); ?></legend>
+
+							<label>
+								<input type="checkbox" name="enable_past_dates" value="1" <?php checked( $current_past_dates_enabled ); ?>>
+								<?php esc_html_e( 'Attivo', 'open-events' ); ?>
+							</label>
+
+							<p class="description">
+								<?php esc_html_e( 'Se non attivo (default), nei calendari del form Inserisci Evento si vedono solo mesi e anni dal giorno corrente in poi: non è possibile selezionare o navigare a date precedenti a oggi.', 'open-events' ); ?>
 							</p>
 						</fieldset>
 					</td>

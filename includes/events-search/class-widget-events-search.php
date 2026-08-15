@@ -244,7 +244,7 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 		$this->add_control(
 			'heading_chips',
 			[
-				'label'     => esc_html__( 'Pulsanti filtro data', 'open-events' ),
+				'label'     => esc_html__( 'Pulsanti Filtri', 'open-events' ),
 				'type'      => \Elementor\Controls_Manager::HEADING,
 				'separator' => 'before',
 			]
@@ -279,6 +279,124 @@ class Widget_Events_Search extends \Elementor\Widget_Base {
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => [
 					'{{WRAPPER}} .oes-chip:not(.is-active)' => 'background: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'chip_hover_bg',
+			[
+				'label'     => esc_html__( 'Sfondo pulsanti al passaggio del mouse (hover)', 'open-events' ),
+				'description' => esc_html__( 'Si applica anche a "Azzera filtri" e alle icone griglia/lista.', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => [
+					// !important: il tema forza uno sfondo rosa su [type="button"]:hover
+					// a specificità identica ai selettori di base del plugin.
+					'{{WRAPPER}} .oes-chip:not(.is-active):hover' => 'background: {{VALUE}} !important;',
+					'{{WRAPPER}} .oes-reset:hover'                => 'background: {{VALUE}} !important;',
+					'{{WRAPPER}} .oes-view-btn:hover'             => 'background: {{VALUE}} !important;',
+				],
+			]
+		);
+
+		$this->add_control(
+			'chip_hover_text',
+			[
+				'label'     => esc_html__( 'Testo pulsanti al passaggio del mouse (hover)', 'open-events' ),
+				'description' => esc_html__( 'Si applica anche a "Azzera filtri" e alle icone griglia/lista.', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => [
+					'{{WRAPPER}} .oes-chip:not(.is-active):hover' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .oes-reset:hover'                => 'color: {{VALUE}};',
+					'{{WRAPPER}} .oes-view-btn:hover'             => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'view_btn_active_color',
+			[
+				'label'     => esc_html__( 'Icona vista attiva', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => [
+					'{{WRAPPER}} .oes-view-btn.is-active' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'heading_calendar',
+			[
+				'label'     => esc_html__( 'Calendario', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			]
+		);
+
+		$this->add_control(
+			'date_field_hover_bg',
+			[
+				'label'     => esc_html__( 'Sfondo campo "Seleziona data" al passaggio del mouse (hover)', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => [
+					'{{WRAPPER}} .oes-date-trigger:hover' => 'background: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'date_field_hover_text',
+			[
+				'label'     => esc_html__( 'Testo campo "Seleziona data" al passaggio del mouse (hover)', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => [
+					'{{WRAPPER}} .oes-date-trigger:hover'               => 'color: {{VALUE}};',
+					'{{WRAPPER}} .oes-date-trigger:hover .oes-date-label'   => 'color: {{VALUE}};',
+					'{{WRAPPER}} .oes-date-trigger:hover .oes-date-chevron' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'dp_day_hover_bg',
+			[
+				'label'     => esc_html__( 'Sfondo numero giorno hover', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => [
+					'{{WRAPPER}} .oes-dp-day:not(.is-empty):not(.is-start):not(.is-end):not(.is-single):hover' => 'background: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'dp_day_hover_color',
+			[
+				'label'     => esc_html__( 'Testo numero giorno hover', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => [
+					'{{WRAPPER}} .oes-dp-day:not(.is-empty):not(.is-start):not(.is-end):not(.is-single):hover' => 'color: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'dp_day_active_bg',
+			[
+				'label'     => esc_html__( 'Sfondo data attiva (selezionata)', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => [
+					'{{WRAPPER}} .oes-dp-day.is-single, {{WRAPPER}} .oes-dp-day.is-start, {{WRAPPER}} .oes-dp-day.is-end' => 'background: {{VALUE}};',
+				],
+			]
+		);
+
+		$this->add_control(
+			'dp_day_active_text',
+			[
+				'label'     => esc_html__( 'Testo data attiva (selezionata)', 'open-events' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => [
+					'{{WRAPPER}} .oes-dp-day.is-single, {{WRAPPER}} .oes-dp-day.is-start, {{WRAPPER}} .oes-dp-day.is-end' => 'color: {{VALUE}};',
 				],
 			]
 		);

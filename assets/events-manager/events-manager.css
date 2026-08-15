@@ -408,6 +408,9 @@ p.em-section-subtitle {
     gap: 20px;
     margin-bottom: 20px;
 }
+.em-form-row-grid.em-row-flush {
+    margin-bottom: 0;
+}
 .em-form-row-grid-vertical {
     display: flex;
     flex-direction: column;
@@ -486,7 +489,7 @@ p.em-section-subtitle {
     transition: background-color 0.2s ease;
 }
 .em-dropzone-remove:hover {
-    background-color: #dc2626;
+    background-color: #dc2626 !important;
 }
 
 /* Time Picker Customization */
@@ -518,6 +521,9 @@ p.em-section-subtitle {
     font-weight: 600;
     color: #334155;
     user-select: none;
+}
+.em-checkbox-label span {
+    line-height: 1 !important;
 }
 .em-checkbox-label input[type="checkbox"] {
     appearance: none;
@@ -692,6 +698,125 @@ p.em-section-subtitle {
     background-color: #fef3c7;
     color: #92400e;
 }
+.em-status-badge.paid {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+.em-status-badge.pending_payment {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+.em-status-badge.expired {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.em-consigliati-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+.em-filter-pill {
+    display: inline-flex;
+    padding: 8px 16px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 20px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: all 0.15s ease;
+}
+.em-filter-pill:hover {
+    border-color: #94a3b8;
+}
+.em-filter-pill.active {
+    border-color: #0284c7;
+    background: #f0f9ff;
+    color: #0284c7;
+}
+.em-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 20px;
+}
+.em-page-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: all 0.15s ease;
+}
+.em-page-link:hover {
+    border-color: #94a3b8;
+}
+.em-page-link.active {
+    border-color: #0284c7;
+    background: #0284c7;
+    color: #ffffff;
+}
+.em-page-link.is-disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+.em-list-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.em-list-toolbar .em-consigliati-filters {
+    margin-bottom: 0;
+}
+.em-sort-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.em-sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 20px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: all 0.15s ease;
+}
+.em-sort-btn:hover {
+    border-color: #94a3b8;
+}
+.em-sort-btn.active {
+    border-color: #0284c7;
+    background: #f0f9ff;
+    color: #0284c7;
+}
+.em-sort-btn .em-icon {
+    font-size: 13px;
+}
+.em-sort-arrow {
+    font-weight: 700;
+}
 .em-featured-badge {
     display: inline-flex;
     align-items: center;
@@ -706,6 +831,47 @@ p.em-section-subtitle {
     vertical-align: middle;
 }
 .em-featured-badge .em-icon {
+    font-size: 10px;
+}
+.em-featured-badge-label {
+    text-transform: uppercase;
+}
+.em-consigliato-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 6px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background-color: #fef3c7;
+    color: #b45309;
+    vertical-align: middle;
+}
+.em-consigliato-badge .em-icon {
+    font-size: 10px;
+}
+.em-receipt-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 6px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    background-color: #f0f9ff;
+    color: #0284c7;
+    vertical-align: middle;
+    text-decoration: none;
+}
+.em-receipt-link:hover {
+    background-color: #0284c7;
+    color: #ffffff;
+}
+.em-receipt-link .em-icon {
     font-size: 10px;
 }
 
@@ -726,7 +892,8 @@ p.em-section-subtitle {
     text-decoration: none !important;
 }
 .em-submit-btn:hover {
-    background-color: #0369a1;
+    background-color: #0369a1 !important;
+    color: #ffffff !important;
 }
 .em-submit-btn.link-btn {
     padding: 10px 18px;
@@ -751,11 +918,15 @@ p.em-section-subtitle {
     text-decoration: none !important;
     display: inline-flex;
     align-items: center;
+    gap: 8px;
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 .em-cancel-btn:hover {
     background-color: #e2e8f0;
     color: #0f172a;
+}
+.em-cancel-icon {
+    display: none;
 }
 
 /* Secondary Button Details */
@@ -771,13 +942,13 @@ p.em-section-subtitle {
     transition: background-color 0.2s ease;
 }
 .em-secondary-btn:hover {
-    background-color: #334155;
+    background-color: #334155 !important;
 }
 .em-secondary-btn.btn-danger {
     background-color: #ef4444;
 }
 .em-secondary-btn.btn-danger:hover {
-    background-color: #dc2626;
+    background-color: #dc2626 !important;
 }
 
 /* Pulsanti azione icon-only nelle righe elenco: righe più pulite e compatte */
@@ -819,6 +990,24 @@ p.em-section-subtitle {
     background: #059669;
     color: #ffffff;
 }
+.em-action-btn.consigliato-btn {
+    background: #fef3c7;
+    color: #b45309;
+}
+.em-action-btn.consigliato-btn:hover {
+    background: #f59e0b;
+    color: #ffffff;
+}
+/* Variante con etichetta visibile (icona + testo), non solo icona 34x34 */
+.em-action-btn.em-consigliato-cta {
+    width: auto;
+    height: 34px;
+    gap: 6px;
+    padding: 0 12px;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 600;
+}
 .em-action-btn.delete-btn {
     background: #fee2e2;
     color: #b91c1c;
@@ -828,18 +1017,414 @@ p.em-section-subtitle {
     color: #ffffff;
 }
 
-/* Recurrence box */
-.em-recurrence-rule-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
-    background: #ffffff;
-    padding: 20px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    margin-top: 15px;
+/* Evento con più date: pattern, giorni settimana, anteprima date generate */
+.em-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 16px 0;
 }
+.em-field-label-sm {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 8px;
+}
+.em-field-help {
+    font-size: 12px;
+    color: #94a3b8;
+    margin: 6px 0 0;
+    line-height: 1.4;
+}
+.em-recommended-benefits {
+    margin-top: 10px;
+    padding: 12px 14px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 8px;
+}
+.em-recommended-benefits-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.em-recommended-benefits-list li {
+    position: relative;
+    padding-left: 16px;
+    font-size: 13px;
+    color: #78350f;
+    line-height: 1.4;
+}
+.em-recommended-benefits-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #b45309;
+}
+@media screen and (max-width: 600px) {
+    .em-recommended-benefits-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+.em-pattern-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.em-pattern-btn {
+    padding: 10px 8px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.em-pattern-btn:hover {
+    /* !important: il tema forza uno sfondo rosa su [type="button"]:hover a
+       specificità identica alla nostra. */
+    background-color: #ffffff !important;
+    border-color: #94a3b8;
+}
+.em-pattern-btn.active {
+    border-color: #0284c7;
+    background: #f0f9ff;
+    color: #0284c7;
+}
+.em-pattern-btn.active:hover {
+    background-color: #f0f9ff !important;
+    border-color: #0284c7;
+}
+.em-days {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+.em-day-chip {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.em-day-chip:hover {
+    background-color: #ffffff !important;
+    border-color: #94a3b8;
+}
+.em-day-chip.active {
+    background: #0284c7;
+    border-color: #0284c7;
+    color: #ffffff;
+}
+.em-day-chip.active:hover {
+    background-color: #0284c7 !important;
+    border-color: #0284c7;
+}
+.em-preview {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 12px 14px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+.em-preview-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #94a3b8;
+    margin-bottom: 8px;
+}
+.em-preview-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    margin-bottom: 5px;
+    font-size: 13px;
+}
+.em-preview-item:last-child {
+    margin-bottom: 0;
+}
+.em-preview-item.excluded {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+.em-preview-x, .em-preview-restore {
+    flex-shrink: 0;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+}
+.em-preview-x {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #fee2e2;
+    color: #dc2626;
+    font-size: 15px;
+    line-height: 1;
+}
+.em-preview-x:hover {
+    background: #fecaca !important;
+}
+.em-preview-restore {
+    background: none;
+    color: #0284c7;
+    text-decoration: underline;
+    padding: 2px 4px;
+}
+.em-preview-restore:hover {
+    background: none !important;
+    color: #0369a1;
+}
+.em-badge-extra, .em-badge-exc {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+}
+.em-badge-extra {
+    background: #dbeafe;
+    color: #2563eb;
+}
+.em-badge-exc {
+    background: #fef3c7;
+    color: #d97706;
+}
+.em-recurrence-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+/* Campo data: stesso trigger+calendario popup della barra di ricerca (Ricerca
+   Eventi). L'input nativo resta sotto, stessa area, invisibile: continua a
+   gestire name/value/required, il bottone sopra apre il calendario custom. */
+.em-date-field {
+    position: relative;
+}
+.em-date-native {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    z-index: 0;
+    padding: 0;
+    border: none;
+}
+.em-date-trigger {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #0f172a;
+    text-align: left;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.em-date-trigger:hover,
+.em-date-trigger:focus {
+    /* !important: il tema ha [type="button"]:hover/:focus con sfondo rosa a
+       specificità identica alla nostra — senza, vince a seconda dell'ordine
+       di caricamento dei fogli di stile. */
+    background-color: #ffffff !important;
+    border-color: #94a3b8;
+    outline: none;
+}
+.em-date-trigger.is-open {
+    border-color: #0284c7;
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.1);
+}
+.em-date-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: #64748b;
+}
+.em-date-label {
+    flex: 1;
+    color: #94a3b8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.em-date-trigger.has-value .em-date-label {
+    color: #0f172a;
+}
+.em-date-chevron {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: #94a3b8;
+    transition: transform 0.2s ease;
+}
+.em-date-trigger.is-open .em-date-chevron {
+    transform: rotate(180deg);
+}
+
+/* Popup calendario */
+.em-dp {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 50;
+    width: 320px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+    padding: 12px;
+}
+.em-dp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.em-dp-monthyear {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.em-dp-month-select,
+.em-dp-year-select {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 4px 6px;
+    cursor: pointer;
+}
+.em-dp-month-select {
+    min-width: 118px;
+}
+.em-dp-year-select {
+    width: 56px;
+    padding: 4px 2px;
+}
+.em-dp-prev:disabled, .em-dp-next:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+.em-dp-prev:disabled:hover, .em-dp-next:disabled:hover {
+    background: transparent !important;
+    color: #64748b;
+}
+.em-dp-nav {
+    display: flex;
+    flex-shrink: 0;
+    gap: 4px;
+}
+.em-dp-prev, .em-dp-next {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none !important;
+    border-radius: 6px;
+    background: #f1f5f9 !important;
+    color: #000000 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    font-size: 11px;
+    line-height: 1;
+}
+.em-dp-prev:hover, .em-dp-next:hover,
+.em-dp-prev:focus, .em-dp-next:focus {
+    background: #e2e8f0 !important;
+    color: #000000 !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+.em-dp-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    margin-bottom: 4px;
+}
+.em-dp-weekday {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+.em-dp-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+.em-dp-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1e293b;
+    border-radius: 8px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 0;
+    line-height: 1;
+    transition: background 0.1s, color 0.1s;
+}
+.em-dp-day.is-empty {
+    pointer-events: none;
+}
+.em-dp-day.is-disabled {
+    pointer-events: none;
+    color: #cbd5e1;
+    cursor: not-allowed;
+}
+.em-dp-day:not(.is-empty):not(.is-selected):hover {
+    background: #f0f9ff !important;
+    color: #0284c7;
+}
+.em-dp-day.is-today {
+    font-weight: 700;
+    color: #0284c7;
+}
+.em-dp-day.is-selected {
+    background: #0284c7;
+    color: #ffffff;
+    font-weight: 700;
+}
+
 .em-form-select-sm, .em-form-input-sm {
     padding: 8px 12px;
     font-size: 13px;
@@ -993,6 +1578,11 @@ p.em-section-subtitle {
 @media screen and (max-width: 900px) {
     .em-portal-layout {
         flex-direction: column;
+        /* Da riga a colonna: senza questo reset resta align-items:flex-start
+           (voluto in riga, per la sidebar sticky) e .em-portal-main si
+           restringe al contenuto più largo (es. titolo evento lungo) invece
+           di occupare tutta la larghezza, causando scroll orizzontale. */
+        align-items: stretch;
     }
     .em-portal-sidebar {
         flex: 1 1 auto;
@@ -1070,6 +1660,64 @@ p.em-section-subtitle {
         order: 4;
         margin-left: auto;
     }
+
+    /* Form Inserisci/Modifica Evento: righe data+ora e i due switch
+       finiscono impilate su una colonna sola; senza questo reset si
+       sommano il gap della grid e il margin-bottom di .em-form-group,
+       raddoppiando lo spazio verticale percepito. */
+    .em-form-row-grid {
+        gap: 8px;
+    }
+    .em-form-row-grid .em-form-group {
+        margin-bottom: 0;
+    }
+
+    .em-form-actions {
+        flex-wrap: nowrap;
+    }
+    .em-cancel-btn {
+        flex: 0 0 auto;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        justify-content: center;
+        background-color: #ef4444;
+        border-color: #ef4444;
+        color: #ffffff;
+        font-size: 18px;
+    }
+    .em-cancel-btn:hover {
+        background-color: #dc2626;
+        color: #ffffff;
+    }
+    .em-cancel-icon {
+        display: inline-flex;
+    }
+    .em-cancel-label {
+        display: none;
+    }
+    .em-submit-btn {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    /* Calendario popup (Data Inizio/Fine, ecc.): larghezza fissa 320px va in
+       overflow orizzontale su schermi stretti spingendo tutta la pagina.
+       Si adatta invece alla larghezza del campo (che è già responsive),
+       con un tetto ragionevole. Le frecce vanno su una riga propria sotto
+       mese/anno così non servono margini extra per starci affiancate. */
+    .em-dp {
+        width: 100%;
+        max-width: 300px;
+    }
+    .em-dp-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+    .em-dp-nav {
+        justify-content: flex-end;
+    }
 }
 @media screen and (max-width: 400px) {
     .em-hub-grid {
@@ -1134,8 +1782,30 @@ p.em-section-subtitle {
     color: #0369a1;
     vertical-align: middle;
 }
+.em-user-avatar {
+    position: relative;
+}
 .em-user-avatar img {
     border-radius: 50%;
+}
+.em-user-provider-badge {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.em-user-provider-badge svg {
+    width: 12px;
+    height: 12px;
 }
 .em-user-login {
     margin-left: 6px;

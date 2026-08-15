@@ -1,0 +1,262 @@
+/* Widget "Community Auth" — form Accedi/Registrati con toggle. Classi a se'
+   stanti (prefisso oe-community-) per non dipendere dal CSS del widget
+   Front-end Events Manager, che potrebbe non essere caricato su questa pagina. */
+.oe-community {
+    --oe-community-accent: #0284c7;
+    max-width: 420px;
+    margin: 0 auto;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    padding: 32px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    box-sizing: border-box;
+}
+.oe-community * {
+    box-sizing: border-box;
+}
+
+/* Senza immagine laterale: .oe-community-shell centra semplicemente il box
+   del form (comportamento identico a prima di questa regola). Con immagine
+   diventa un box a tutta larghezza diviso in due colonne, form + immagine. */
+.oe-community-shell {
+    display: flex;
+    justify-content: center;
+}
+.oe-community-shell.has-image {
+    max-width: 960px;
+    margin: 0 auto;
+    align-items: stretch;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+.oe-community-shell.has-image .oe-community {
+    flex: 1 1 50%;
+    max-width: none;
+    margin: 0;
+    box-shadow: none;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.oe-community-image-side {
+    flex: 1 1 50%;
+    background-size: cover;
+    background-position: center;
+    min-height: 480px;
+    order: 2;
+}
+.oe-community-shell.image-sinistra .oe-community-image-side {
+    order: -1;
+}
+@media screen and (max-width: 782px) {
+    .oe-community-shell.has-image {
+        flex-direction: column;
+    }
+    .oe-community-image-side {
+        min-height: 200px;
+        order: -1;
+    }
+}
+
+.oe-community-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    background-color: #f1f5f9;
+    border-radius: 10px;
+    padding: 4px;
+}
+.oe-community-tab {
+    flex: 1 1 auto;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.oe-community-tab.is-active {
+    background-color: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.oe-community-tab:hover:not(.is-active) {
+    background-color: #e2e8f0;
+    color: #334155;
+}
+
+.oe-community-panel {
+    display: none;
+}
+.oe-community-panel.is-active {
+    display: block;
+}
+
+.oe-community-field {
+    margin-bottom: 20px;
+}
+/* Honeypot anti-bot: fuori schermo invece di display:none, che alcuni bot
+   riconoscono e saltano. Invisibile e non raggiungibile da tastiera/screen
+   reader per un utente reale. */
+.oe-hp-field {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+.oe-community-field label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 8px;
+}
+.oe-community-field input[type="text"],
+.oe-community-field input[type="email"],
+.oe-community-field input[type="password"],
+.oe-community-field select {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #0f172a;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+.oe-community-field input:focus,
+.oe-community-field select:focus {
+    border-color: var(--oe-community-accent);
+    outline: none;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--oe-community-accent) 15%, transparent);
+}
+.oe-community-field-inline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #334155;
+}
+.oe-community-field-inline label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    margin: 0;
+}
+.oe-community-link {
+    color: var(--oe-community-accent);
+    text-decoration: none;
+}
+.oe-community-link:hover {
+    text-decoration: underline;
+}
+
+.oe-community-submit {
+    width: 100%;
+    background-color: var(--oe-community-accent);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.2s ease;
+}
+.oe-community-submit:hover {
+    filter: brightness(0.9);
+}
+
+.oe-community-social {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.oe-community-social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none !important;
+    background-color: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.oe-social-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+.oe-community-social-btn:hover {
+    background-color: #e2e8f0;
+}
+
+.oe-community-alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.oe-community-alert-success {
+    background-color: #ecfdf5;
+    color: #047857;
+    border-left: 4px solid #10b981;
+}
+.oe-community-alert-error {
+    background-color: #fef2f2;
+    color: #b91c1c;
+    border-left: 4px solid #ef4444;
+}
+.oe-community-alert p {
+    margin: 0 0 8px;
+}
+.oe-community-alert p:last-child {
+    margin-bottom: 0;
+}
+.oe-community-redirect-note {
+    font-size: 13px;
+    opacity: 0.85;
+}
+.oe-community-redirect-note a {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.oe-hidden {
+    display: none !important;
+}
+
+.oe-community-editor-notice {
+    max-width: 960px;
+    margin: 0 auto 12px;
+    padding: 8px 14px;
+    background-color: #fffbeb;
+    color: #92400e;
+    border: 1px dashed #f59e0b;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+@media screen and (max-width: 480px) {
+    .oe-community {
+        padding: 24px;
+    }
+}
