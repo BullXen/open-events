@@ -38,13 +38,29 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
             $is_self = ( $u->ID === $current_user_id );
             $is_admin_user = in_array( 'administrator', $u_roles, true );
             $edit_link = admin_url( 'user-edit.php?user_id=' . $u->ID );
+            // Provider di registrazione: oe_{provider}_id viene salvato solo
+            // al primo login social (vedi open_events_community_social_login_or_register()
+            // in community-oauth.php). Nessuno dei due -> registrazione classica via email.
+            if ( get_user_meta( $u->ID, 'oe_google_id', true ) ) {
+                $reg_provider = 'google';
+                $reg_provider_label = __( 'Registrato con Google', 'open-events' );
+            } elseif ( get_user_meta( $u->ID, 'oe_facebook_id', true ) ) {
+                $reg_provider = 'facebook';
+                $reg_provider_label = __( 'Registrato con Facebook', 'open-events' );
+            } else {
+                $reg_provider = 'email';
+                $reg_provider_label = __( 'Registrato con email', 'open-events' );
+            }
             $delete_url = wp_nonce_url(
                 add_query_arg( [ 'oe_user_action' => 'delete', 'user_id' => $u->ID ], remove_query_arg( [ 'oe_user_action', 'user_id', '_wpnonce' ] ) ),
                 'oe_user_delete_' . $u->ID
             );
             ?>
             <div class="em-item-row em-user-row">
-                <span class="em-item-thumb em-user-avatar"><?php echo get_avatar( $u->ID, 44 ); ?></span>
+                <span class="em-item-thumb em-user-avatar">
+                    <?php echo get_avatar( $u->ID, 44 ); ?>
+                    <span class="em-user-provider-badge" title="<?php echo esc_attr( $reg_provider_label ); ?>"><?php echo $this->registration_provider_icon( $reg_provider ); ?></span>
+                </span>
                 <div class="em-item-info">
                     <strong class="em-item-title">
                         <?php echo esc_html( $u->display_name ); ?>

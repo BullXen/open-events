@@ -1782,8 +1782,30 @@ p.em-section-subtitle {
     color: #0369a1;
     vertical-align: middle;
 }
+.em-user-avatar {
+    position: relative;
+}
 .em-user-avatar img {
     border-radius: 50%;
+}
+.em-user-provider-badge {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.em-user-provider-badge svg {
+    width: 12px;
+    height: 12px;
 }
 .em-user-login {
     margin-left: 6px;

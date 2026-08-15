@@ -225,6 +225,21 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
         return $icons[ $key ] ?? '';
     }
 
+    /**
+     * Logo del metodo di registrazione (badge sull'avatar in "Utenti
+     * iscritti"). A differenza di icon_svg() questi sono a colori reali
+     * (brand Google/Facebook), non currentColor: non hanno senso monocromi.
+     */
+    private function registration_provider_icon( $provider ) {
+        $icons = [
+            'google'   => '<svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.9 32.7 29.4 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.1 5.1 29.3 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20-7.6 20-21 0-1.4-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.1 18.9 12 24 12c3.1 0 5.8 1.1 8 3l6-6C34.1 5.1 29.3 3 24 3c-7.4 0-13.8 4.2-17.1 10.3z"/><path fill="#4CAF50" d="M24 45c5.2 0 9.9-1.7 13.6-4.6l-6.3-5.3c-2 1.5-4.6 2.4-7.3 2.4-5.4 0-9.9-3.4-11.5-8.2l-6.5 5C9.9 40.5 16.4 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.9 2.5-2.5 4.6-4.7 6.1l6.3 5.3C39.9 37 44 31 44 24c0-1.4-.1-2.3-.4-3.5z"/></svg>',
+            'facebook' => '<svg viewBox="0 0 24 24"><path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>',
+            'email'    => '<svg viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>',
+        ];
+
+        return $icons[ $provider ] ?? $icons['email'];
+    }
+
     private function render_icon( $key, $extra_class = '' ) {
         echo '<span class="em-icon' . ( $extra_class ? ' ' . esc_attr( $extra_class ) : '' ) . '" aria-hidden="true">' . $this->icon_svg( $key ) . '</span>';
     }
