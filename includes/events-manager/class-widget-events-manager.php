@@ -1131,6 +1131,11 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                 } else {
                     $post_data['post_status'] = ( 'tribe_events' === $post_type ) ? open_events_get_default_event_status() : 'draft';
                     $post_data['post_author'] = $assign_to_user_id ? $assign_to_user_id : $current_user_id;
+                    // WP azzera post_date_gmt per i post inseriti come draft/pending
+                    // (vedi wp_insert_post()), ma il badge "nuovi" nell'hub confronta
+                    // proprio post_date_gmt: senza impostarlo qui esplicitamente, i
+                    // nuovi eventi in revisione non farebbero mai scattare la notifica.
+                    $post_data['post_date_gmt'] = current_time( 'mysql', true );
                     $post_id = wp_insert_post( $post_data, true );
                 }
 
