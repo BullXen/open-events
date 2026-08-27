@@ -75,7 +75,7 @@ function open_events_community_generate_username_from_email( $email ) {
 
 function open_events_community_handle_register() {
 	if ( ! isset( $_POST['oe_community_nonce'] ) || ! wp_verify_nonce( $_POST['oe_community_nonce'], 'oe_community_register' ) ) {
-		wp_die( esc_html__( 'Richiesta non valida, ricarica la pagina e riprova.', 'open-events' ) );
+		open_events_community_redirect_with_error( 'session_expired', 'registrati' );
 	}
 
 	$settings = open_events_get_community_settings();
@@ -156,7 +156,7 @@ add_action( 'admin_post_oe_community_register', __NAMESPACE__ . '\\open_events_c
 
 function open_events_community_handle_login() {
 	if ( ! isset( $_POST['oe_community_nonce'] ) || ! wp_verify_nonce( $_POST['oe_community_nonce'], 'oe_community_login' ) ) {
-		wp_die( esc_html__( 'Richiesta non valida, ricarica la pagina e riprova.', 'open-events' ) );
+		open_events_community_redirect_with_error( 'session_expired', 'accedi' );
 	}
 
 	$creds = [

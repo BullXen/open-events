@@ -34,6 +34,7 @@ if ( is_user_logged_in() && ! $is_editor_preview ) {
 
 $error_messages = [
 	'login_failed'         => esc_html__( 'Email/username o password errati.', 'open-events' ),
+	'session_expired'      => esc_html__( 'La sessione del form è scaduta. Riprova qui sotto.', 'open-events' ),
 	'registration_disabled' => esc_html__( 'La registrazione non è al momento disponibile.', 'open-events' ),
 	'missing_first_name'   => esc_html__( 'Il nome è obbligatorio.', 'open-events' ),
 	'missing_last_name'    => esc_html__( 'Il cognome è obbligatorio.', 'open-events' ),
