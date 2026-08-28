@@ -48,6 +48,8 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
             <form method="POST" enctype="multipart/form-data" class="em-modern-form">
                 <?php wp_nonce_field( 'em_save', 'em_nonce' ); ?>
                 <input type="hidden" name="action_submit" value="1">
+                <?php /* Token anti-doppio-invio: stesso valore ad ogni resubmit del browser (retry di rete, "riinvia modulo", doppio click), usato lato server per ignorare i tentativi ripetuti. */ ?>
+                <input type="hidden" name="em_submit_token" value="<?php echo esc_attr( wp_generate_password( 20, false ) ); ?>">
 
                 <div class="em-form-section">
                     <h3 class="em-form-section-title"><?php esc_html_e( '1. Informazioni Base', 'open-events' ); ?></h3>

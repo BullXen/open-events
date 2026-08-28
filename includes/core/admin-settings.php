@@ -12,6 +12,8 @@ const VENUE_VISIBILITY_OPTION     = 'open_events_venue_visibility';
 const ALL_DAY_EVENT_OPTION        = 'open_events_enable_all_day_event';
 const RECURRING_EVENT_OPTION      = 'open_events_enable_recurring_event';
 const PAST_DATES_OPTION           = 'open_events_enable_past_dates';
+const SLIDE_AUTO_HOME_OPTION      = 'open_events_slide_auto_home';
+const SLIDE_HOME_MAX_ITEMS_OPTION = 'open_events_slide_home_max_items';
 
 /**
  * Trova la posizione del menu "Eventi" (tribe_events) cosi' da inserire
@@ -129,6 +131,21 @@ function open_events_is_recurring_event_enabled() {
  */
 function open_events_is_past_dates_enabled() {
 	return '1' === get_option( PAST_DATES_OPTION, '0' );
+}
+
+/**
+ * Se attivo, la Slide Eventi (con priorità ai Consigliati/in primo piano)
+ * viene inserita automaticamente in cima al contenuto della homepage, senza
+ * bisogno di trascinare il widget Elementor sulla pagina.
+ */
+function open_events_is_slide_auto_home_enabled() {
+	return '1' === get_option( SLIDE_AUTO_HOME_OPTION, '0' );
+}
+
+function open_events_get_slide_home_max_items() {
+	$max = absint( get_option( SLIDE_HOME_MAX_ITEMS_OPTION, 6 ) );
+
+	return $max > 0 ? min( 20, $max ) : 6;
 }
 
 /**
@@ -339,6 +356,10 @@ function open_events_render_settings_page() {
 		update_option( ALL_DAY_EVENT_OPTION, isset( $_POST['enable_all_day_event'] ) ? '1' : '0' );
 		update_option( RECURRING_EVENT_OPTION, isset( $_POST['enable_recurring_event'] ) ? '1' : '0' );
 		update_option( PAST_DATES_OPTION, isset( $_POST['enable_past_dates'] ) ? '1' : '0' );
+
+		update_option( SLIDE_AUTO_HOME_OPTION, isset( $_POST['slide_auto_home'] ) ? '1' : '0' );
+		$slide_home_max_items = absint( wp_unslash( $_POST['slide_home_max_items'] ?? 6 ) );
+		update_option( SLIDE_HOME_MAX_ITEMS_OPTION, $slide_home_max_items > 0 ? $slide_home_max_items : 6 );
 		$saved = true;
 	}
 
@@ -353,6 +374,8 @@ function open_events_render_settings_page() {
 	$current_all_day_enabled = open_events_is_all_day_event_enabled();
 	$current_recurring_enabled = open_events_is_recurring_event_enabled();
 	$current_past_dates_enabled = open_events_is_past_dates_enabled();
+	$current_slide_auto_home = open_events_is_slide_auto_home_enabled();
+	$current_slide_home_max_items = open_events_get_slide_home_max_items();
 	?>
 	<div class="wrap">
 		<h1><?php esc_html_e( 'Open Events - Impostazioni', 'open-events' ); ?></h1>
@@ -531,6 +554,23 @@ function open_events_render_settings_page() {
 								<?php esc_html_e( 'Se non attivo (default), nei calendari del form Inserisci Evento si vedono solo mesi e anni dal giorno corrente in poi: non è possibile selezionare o navigare a date precedenti a oggi.', 'open-events' ); ?>
 							</p>
 						</fieldset>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Slide eventi in homepage', 'open-events' ); ?></th>
+					<td>
+						<label>
+							<input type="checkbox" name="slide_auto_home" value="1" <?php checked( $current_slide_auto_home ); ?>>
+							<?php esc_html_e( 'Inserisci automaticamente la Slide Eventi in cima alla homepage', 'open-events' ); ?>
+						</label>
+						<p class="description">
+							<label for="open_events_slide_home_max_items">
+								<?php esc_html_e( 'Numero eventi mostrati:', 'open-events' ); ?>
+								<input type="number" name="slide_home_max_items" id="open_events_slide_home_max_items" class="small-text" min="1" max="20" step="1" value="<?php echo esc_attr( $current_slide_home_max_items ); ?>">
+							</label>
+							<br>
+							<?php esc_html_e( 'In alternativa (o in aggiunta), la Slide Eventi è disponibile anche come widget Elementor "Slide Eventi Consigliati" o come shortcode [open_events_slide] da inserire in qualunque pagina.', 'open-events' ); ?>
+						</p>
 					</td>
 				</tr>
 			</table>

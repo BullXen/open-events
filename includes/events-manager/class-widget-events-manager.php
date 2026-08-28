@@ -1085,6 +1085,23 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
         $error_msg = '';
 
         if ( isset( $_POST['action_submit'] ) && wp_verify_nonce( $_POST['em_nonce'], 'em_save' ) ) {
+            // Guardia anti-doppio-invio: un retry di rete o un doppio click rimandano
+            // lo stesso token (generato una volta sola al render del form). La prima
+            // richiesta "consuma" il lock nel transient, ogni richiesta successiva con
+            // lo stesso token viene ignorata invece di creare un duplicato. Senza
+            // questo, un timeout lato proxy (es. Cloudflare 522) che induce l'utente
+            // a reinviare il form genera un nuovo post ad ogni tentativo.
+            $submit_token = isset( $_POST['em_submit_token'] ) ? sanitize_text_field( $_POST['em_submit_token'] ) : '';
+            $is_duplicate_submit = false;
+            if ( $submit_token ) {
+                $lock_key = 'oe_submit_' . $submit_token;
+                if ( false !== get_transient( $lock_key ) ) {
+                    $is_duplicate_submit = true;
+                } else {
+                    set_transient( $lock_key, 1, 5 * MINUTE_IN_SECONDS );
+                }
+            }
+
             $title = isset( $_POST['post_title'] ) ? sanitize_text_field( $_POST['post_title'] ) : '';
             $content = isset( $_POST['post_content'] ) ? wp_kses_post( $_POST['post_content'] ) : '';
 
@@ -1106,7 +1123,9 @@ class Widget_Events_Manager extends \Elementor\Widget_Base {
                 }
             }
 
-            if ( empty( $title ) ) {
+            if ( $is_duplicate_submit ) {
+                $success_msg = esc_html__( 'Richiesta già ricevuta: evita di inviare due volte lo stesso modulo (es. ricaricando la pagina dopo un errore di connessione).', 'open-events' );
+            } elseif ( empty( $title ) ) {
                 $error_msg = esc_html__( 'Il titolo/nome è obbligatorio.', 'open-events' );
             } elseif ( $featured_limit_hit ) {
                 $error_msg = sprintf( esc_html__( 'Limite di eventi in primo piano raggiunto (massimo %d). Rimuovi il segno da un altro evento prima di aggiungerne uno nuovo.', 'open-events' ), $featured_limit );
