@@ -342,6 +342,24 @@ class EventsManagerHandler extends elementorModules.frontend.handlers.Base {
         this.initCategoryPicker();
         this.initImageDropzones();
         this.scrollActiveSidebarLinkIntoView();
+        this.initSubmitGuard();
+    }
+
+    // Disabilita il pulsante di invio non appena il form parte davvero (dopo
+    // le validazioni di initCategoryPicker, che possono ancora bloccare il
+    // submit con preventDefault). Evita doppi click; su un submit lento o un
+    // errore di rete l'utente vede il pulsante "occupato" invece di pensare
+    // che non sia partito e reinviare (il server ha comunque una guardia
+    // anti-doppio-invio indipendente da questo).
+    initSubmitGuard() {
+        this.elements.$form.on('submit', (e) => {
+            if (e.isDefaultPrevented()) {
+                return;
+            }
+            this.elements.$form.find('.em-submit-btn[type="submit"]')
+                .prop('disabled', true)
+                .append(' <span class="em-submit-spinner">…</span>');
+        });
     }
 
     // --------------------------------------------------------------------

@@ -3,7 +3,7 @@
 Plugin Name: Open Events
 Plugin URI: https://github.com/BullXen/open-events
 Description: Plugin per la gestione di eventi. Aggiunge a Elementor un widget che permette agli utenti loggati di gestire da front-end eventi, luoghi e organizzatori (The Events Calendar) come un portale.
-Version: 1.9.0
+Version: 1.10.0
 Author: BullXen
 GitHub Plugin URI: BullXen/open-events
 Primary Branch: main
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OPEN_EVENTS_VERSION', '1.9.0' );
+define( 'OPEN_EVENTS_VERSION', '1.10.0' );
 define( 'OPEN_EVENTS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OPEN_EVENTS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
@@ -25,6 +25,11 @@ require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/core/admin-settings.php';
 // Richiesto sempre: registra gli handler AJAX della Ricerca Eventi, che
 // vengono serviti da admin-ajax.php (dove il widget Elementor non è caricato).
 require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/events-search/events-search.php';
+
+// Richiesto sempre (non solo in admin): la Slide Eventi registra lo shortcode
+// [open_events_slide] e l'auto-inserimento in homepage, entrambi utilizzabili
+// a prescindere da dove/se Elementor carica il widget sulla pagina.
+require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/events-slide/events-slide.php';
 
 /**
  * La cache "Elementi" di Elementor (Impostazioni → Performance) mette in
@@ -266,6 +271,9 @@ function open_events_register_widgets( $widgets_manager ) {
 
 	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/community/class-widget-community-auth.php';
 	$widgets_manager->register( new \OpenEvents\Widget_Community_Auth() );
+
+	require_once OPEN_EVENTS_PLUGIN_DIR . 'includes/events-slide/class-widget-events-slide.php';
+	$widgets_manager->register( new \OpenEvents\Widget_Events_Slide() );
 }
 
 function open_events_register_assets() {
@@ -311,6 +319,24 @@ function open_events_register_assets() {
 			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 			'nonce'   => wp_create_nonce( 'open_events_search' ),
 		]
+	);
+
+	// Slide Eventi Consigliati: stile + script del carousel. Registrati sempre
+	// (non solo se il widget è in pagina) perché servono anche a shortcode e
+	// auto-inserimento in homepage, che non passano dal caricamento asset di
+	// Elementor legato al widget.
+	wp_register_style(
+		'open-events-slide-style',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/events-slide/events-slide.css',
+		[],
+		OPEN_EVENTS_VERSION
+	);
+	wp_register_script(
+		'open-events-slide-script',
+		OPEN_EVENTS_PLUGIN_URL . 'assets/events-slide/events-slide.js',
+		[ 'jquery' ],
+		OPEN_EVENTS_VERSION,
+		true
 	);
 
 	// Community Auth: stile + script del widget Accedi/Registrati.

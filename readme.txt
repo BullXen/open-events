@@ -4,7 +4,7 @@ Tags: events, elementor, the-events-calendar, front-end submission
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.9.0
+Stable tag: 1.10.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,12 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * I nuovi eventi vengono salvati come "in attesa di revisione" (pending) cosi' un amministratore puo' approvarli prima della pubblicazione; luoghi e organizzatori restano in bozza.
 
 == Changelog ==
+
+= 1.10.0 =
+* Nuovo: modulo "Slide Eventi Consigliati" — carousel hero con priorità agli eventi Consigliati/in primo piano, poi ai prossimi eventi. Disponibile come widget Elementor, shortcode `[open_events_slide max_items="6" only_featured="false"]`, o auto-inserimento in cima alla homepage (opzione in Open Events → Impostazioni). Nessuna libreria esterna: carousel scritto da zero, stessa query/ordinamento già usati dalla Ricerca Eventi.
+
+= 1.9.1 =
+* Fix: un errore di rete/timeout (es. errore 522 Cloudflare) durante il salvataggio di un evento poteva portare l'utente a reinviare più volte lo stesso modulo, creando eventi duplicati identici; ora un secondo invio con lo stesso token viene riconosciuto e ignorato. Il pulsante "Salva/Pubblica" si disabilita inoltre subito dopo il primo click per ridurre i doppi invii accidentali.
 
 = 1.9.0 =
 * Nuovo: Google reCAPTCHA v3 (invisibile) sulla registrazione Community, in aggiunta a honeypot e time-trap già presenti — configurabile da Open Events → Community (chiavi + soglia punteggio minimo).
