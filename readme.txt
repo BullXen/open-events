@@ -1,14 +1,15 @@
 === Open Events ===
 Contributors: BullXen
 Tags: events, elementor, the-events-calendar, front-end submission
+Requires Plugins: elementor, the-events-calendar
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.10.0
+Stable tag: 1.10.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Plugin per la gestione di eventi. Aggiunge a Elementor un widget che permette agli utenti loggati di gestire da front-end eventi, luoghi e organizzatori (The Events Calendar) come un portale.
+Widget Elementor che trasforma una pagina in un portale front-end per gestire eventi, luoghi e organizzatori di The Events Calendar.
 
 == Description ==
 
@@ -19,7 +20,29 @@ Open Events aggiunge un widget Elementor ("Front-end Events Manager") che trasfo
 * Creazione rapida di nuovi luoghi/organizzatori direttamente dal form evento.
 * I nuovi eventi vengono salvati come "in attesa di revisione" (pending) cosi' un amministratore puo' approvarli prima della pubblicazione; luoghi e organizzatori restano in bozza.
 
+Richiede i plugin **Elementor** e **The Events Calendar** attivi.
+
+== External services ==
+
+Open Events si appoggia ad alcuni servizi esterni, tutti **opzionali** e disattivati finché un amministratore non li configura esplicitamente in Open Events → Impostazioni/Community/Eventi Consigliati:
+
+* **Stripe** (modulo "Eventi Consigliati") — se un utente sceglie di promuovere un evento a pagamento, il plugin crea una Checkout Session inviando a `api.stripe.com` titolo evento, importo e l'ID del post come riferimento; la conferma del pagamento arriva via webhook dallo stesso servizio. Attivo solo se l'admin configura le chiavi Stripe. [Termini di servizio](https://stripe.com/legal/consumer) — [Privacy Policy](https://stripe.com/privacy).
+* **Google Sign-In** (modulo Community, login/registrazione) — se abilitato, al login/registrazione con Google il browser dell'utente viene reindirizzato a `accounts.google.com`; il plugin poi scambia il codice ricevuto con `oauth2.googleapis.com` e legge email/nome/foto profilo da `googleapis.com`. Attivo solo se l'admin configura Client ID/Secret Google. [Termini di servizio](https://policies.google.com/terms) — [Privacy Policy](https://policies.google.com/privacy).
+* **Accedi con Facebook** (modulo Community, login/registrazione) — stesso meccanismo, verso `facebook.com` e `graph.facebook.com`. Attivo solo se l'admin configura App ID/Secret Facebook. [Termini di servizio](https://www.facebook.com/legal/terms) — [Privacy Policy](https://www.facebook.com/privacy/policy/).
+* **Google reCAPTCHA v3** (modulo Community, anti-bot in registrazione) — se abilitato, carica lo script `google.com/recaptcha/api.js` e invia il token generato a `google.com/recaptcha/api/siteverify` per verificarne il punteggio. Attivo solo se l'admin configura le chiavi reCAPTCHA. [Termini di servizio](https://policies.google.com/terms) — [Privacy Policy](https://policies.google.com/privacy).
+
+== Installation ==
+
+1. Carica la cartella `open-events` in `/wp-content/plugins/`, oppure installa direttamente lo zip da Bacheca → Plugin → Aggiungi nuovo → Carica plugin.
+2. Attiva il plugin dal menu Plugin di WordPress.
+3. Assicurati che **Elementor** e **The Events Calendar** siano entrambi installati e attivi: sono richiesti per il funzionamento del plugin.
+4. Vai su Open Events (voce di menu subito sotto "Eventi") per configurare stato default dei nuovi eventi, città disponibili e le altre opzioni; le sotto-voci Community e Eventi Consigliati sono opzionali.
+5. In una pagina modificata con Elementor, trascina il widget "Front-end Events Manager" per creare il portale front-end (aggiungi "Ricerca Eventi", "Community Auth" o "Slide Eventi Consigliati" dove servono).
+
 == Changelog ==
+
+= 1.10.1 =
+* Preparazione per la sottomissione a WordPress.org: header `Requires Plugins`/`Requires at least`/`Requires PHP`, sezioni `External services` e `Installation` nel readme, short description accorciata sotto i 150 caratteri, avviso admin se "The Events Calendar" non è attivo (in aggiunta a quello già esistente per Elementor).
 
 = 1.10.0 =
 * Nuovo: modulo "Slide Eventi Consigliati" — carousel hero con priorità agli eventi Consigliati/in primo piano, poi ai prossimi eventi. Disponibile come widget Elementor, shortcode `[open_events_slide max_items="6" only_featured="false"]`, o auto-inserimento in cima alla homepage (opzione in Open Events → Impostazioni). Nessuna libreria esterna: carousel scritto da zero, stessa query/ordinamento già usati dalla Ricerca Eventi.
