@@ -5,7 +5,7 @@ Requires Plugins: elementor, the-events-calendar
 Requires at least: 5.8
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.10.1
+Stable tag: 1.10.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,9 @@ Open Events si appoggia ad alcuni servizi esterni, tutti **opzionali** e disatti
 5. In una pagina modificata con Elementor, trascina il widget "Front-end Events Manager" per creare il portale front-end (aggiungi "Ricerca Eventi", "Community Auth" o "Slide Eventi Consigliati" dove servono).
 
 == Changelog ==
+
+= 1.10.2 =
+* Nuovo: opzione "Pagina Portale" in Open Events → Impostazioni — indica la pagina dove hai messo il widget "Front-end Events Manager". Il link nell'email "Nuovo evento da revisionare" ora punta lì (schermata di modifica del portale) invece che all'editor di wp-admin. Se la pagina non è impostata, il link continua a puntare a wp-admin come prima (nessuna rottura per chi non la configura).
 
 = 1.10.1 =
 * Preparazione per la sottomissione a WordPress.org: header `Requires Plugins`/`Requires at least`/`Requires PHP`, sezioni `External services` e `Installation` nel readme, short description accorciata sotto i 150 caratteri, avviso admin se "The Events Calendar" non è attivo (in aggiunta a quello già esistente per Elementor).

@@ -3,7 +3,7 @@
 Plugin Name: Open Events
 Plugin URI: https://github.com/BullXen/open-events
 Description: Widget Elementor che trasforma una pagina in un portale front-end per gestire eventi, luoghi e organizzatori di The Events Calendar.
-Version: 1.10.1
+Version: 1.10.2
 Author: BullXen
 Requires Plugins: elementor, the-events-calendar
 Requires at least: 5.8
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'OPEN_EVENTS_VERSION', '1.10.1' );
+define( 'OPEN_EVENTS_VERSION', '1.10.2' );
 define( 'OPEN_EVENTS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OPEN_EVENTS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 

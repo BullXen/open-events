@@ -14,6 +14,7 @@ const RECURRING_EVENT_OPTION      = 'open_events_enable_recurring_event';
 const PAST_DATES_OPTION           = 'open_events_enable_past_dates';
 const SLIDE_AUTO_HOME_OPTION      = 'open_events_slide_auto_home';
 const SLIDE_HOME_MAX_ITEMS_OPTION = 'open_events_slide_home_max_items';
+const PORTAL_PAGE_OPTION          = 'open_events_portal_page';
 
 /**
  * Trova la posizione del menu "Eventi" (tribe_events) cosi' da inserire
@@ -146,6 +147,36 @@ function open_events_get_slide_home_max_items() {
 	$max = absint( get_option( SLIDE_HOME_MAX_ITEMS_OPTION, 6 ) );
 
 	return $max > 0 ? min( 20, $max ) : 6;
+}
+
+/**
+ * ID della pagina dove è installato il widget "Front-end Events Manager" in
+ * modalità Hub — usata per costruire link diretti al portale (es. nelle
+ * email di notifica) invece che verso wp-admin.
+ */
+function open_events_get_portal_page_id() {
+	return absint( get_option( PORTAL_PAGE_OPTION, 0 ) );
+}
+
+/**
+ * URL della schermata "Modifica Evento" del portale front-end per un dato
+ * evento (stessa rotta letta da Widget_Events_Manager::render(): ?view=
+ * seleziona il post_type, ?edit_id= il post da aprire in modifica — vedi
+ * class-widget-events-manager.php intorno alla riga 485/911). Se la Pagina
+ * Portale non è stata configurata in Impostazioni, ricade sul link di
+ * modifica di wp-admin invece di restituire un link rotto.
+ */
+function open_events_get_event_edit_url( $post_id ) {
+	$portal_page_id = open_events_get_portal_page_id();
+
+	if ( $portal_page_id && get_post( $portal_page_id ) ) {
+		return add_query_arg(
+			[ 'view' => 'tribe_events', 'edit_id' => $post_id ],
+			get_permalink( $portal_page_id )
+		);
+	}
+
+	return admin_url( 'post.php?post=' . $post_id . '&action=edit' );
 }
 
 /**
@@ -357,6 +388,8 @@ function open_events_render_settings_page() {
 		update_option( RECURRING_EVENT_OPTION, isset( $_POST['enable_recurring_event'] ) ? '1' : '0' );
 		update_option( PAST_DATES_OPTION, isset( $_POST['enable_past_dates'] ) ? '1' : '0' );
 
+		update_option( PORTAL_PAGE_OPTION, absint( wp_unslash( $_POST['portal_page_id'] ?? 0 ) ) );
+
 		update_option( SLIDE_AUTO_HOME_OPTION, isset( $_POST['slide_auto_home'] ) ? '1' : '0' );
 		$slide_home_max_items = absint( wp_unslash( $_POST['slide_home_max_items'] ?? 6 ) );
 		update_option( SLIDE_HOME_MAX_ITEMS_OPTION, $slide_home_max_items > 0 ? $slide_home_max_items : 6 );
@@ -374,6 +407,7 @@ function open_events_render_settings_page() {
 	$current_all_day_enabled = open_events_is_all_day_event_enabled();
 	$current_recurring_enabled = open_events_is_recurring_event_enabled();
 	$current_past_dates_enabled = open_events_is_past_dates_enabled();
+	$current_portal_page_id = open_events_get_portal_page_id();
 	$current_slide_auto_home = open_events_is_slide_auto_home_enabled();
 	$current_slide_home_max_items = open_events_get_slide_home_max_items();
 	?>
@@ -389,6 +423,23 @@ function open_events_render_settings_page() {
 			<input type="hidden" name="open_events_settings_submit" value="1">
 
 			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row"><label for="oe_portal_page"><?php esc_html_e( 'Pagina Portale', 'open-events' ); ?></label></th>
+					<td>
+						<?php
+						wp_dropdown_pages( [
+							'name'              => 'portal_page_id',
+							'id'                => 'oe_portal_page',
+							'selected'          => $current_portal_page_id,
+							'show_option_none'  => esc_html__( '-- Nessuna --', 'open-events' ),
+							'option_none_value' => 0,
+						] );
+						?>
+						<p class="description">
+							<?php esc_html_e( 'La pagina dove hai messo il widget "Front-end Events Manager" in modalità Hub/Dashboard. Usata per generare link diretti al portale (es. nell\'email "Nuovo evento da revisionare") invece che a wp-admin. Senza questa pagina impostata, quei link continuano a puntare a wp-admin.', 'open-events' ); ?>
+						</p>
+					</td>
+				</tr>
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Stato default nuovi eventi', 'open-events' ); ?></th>
 					<td>
