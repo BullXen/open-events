@@ -101,7 +101,7 @@ add_action( 'oe_community_user_registered', function( $user_id ) {
 add_action( 'oe_community_event_submitted', function( $post_id, $event_title, $author_display_name ) {
 	open_events_community_send_templated_email( 'event_submitted', get_option( 'admin_email' ), [
 		'evento_titolo' => $event_title,
-		'evento_link'   => admin_url( 'post.php?post=' . $post_id . '&action=edit' ),
+		'evento_link'   => open_events_get_event_edit_url( $post_id ),
 		'autore_nome'   => $author_display_name,
 	] );
 }, 10, 3 );
